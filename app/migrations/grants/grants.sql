@@ -1,0 +1,2 @@
+GRANT USAGE ON SCHEMA public TO chartdb;
+GRANT ALL ON ALL TABLES IN SCHEMA public TO chartdb;

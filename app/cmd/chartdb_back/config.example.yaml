@@ -1,0 +1,35 @@
+logger:
+  level: debug
+  encoding: console
+  path: stdout  # only "stdout" supported now
+
+http_server:
+  port: 8090
+  tls:
+    enabled: false
+  cors:
+    origins: "http://localhost:5173"
+
+runner:
+  grace_timeout: 5s
+  force_timeout: 1s
+
+s3_client:
+  region: ru-central1
+  url: https://storage.yandexcloud.net
+  access_key_id: YCAJ*********************
+  secret_access_key: YCMg************************************
+  bucket: bucket_name
+
+storage:
+  host: "localhost"
+  port: 5432
+  database: "chartdb"
+  user: "chartdb"
+  password: "password"
+  max_idle_time: 0s
+  max_life_time: 0s
+  max_idle_conn: 5
+  max_open_conn: 10
+  log_level: debug
+  init_timeout: 5s

@@ -9,8 +9,9 @@ type ctxKey struct{}
 
 // ContextFields returns log.Fields bound with ctx.
 // If no fields are bound, it returns nil.
-func ContextFields(ctx context.Context) []slog.Attr {
-	fs, _ := ctx.Value(ctxKey{}).([]slog.Attr)
+func ContextFields(ctx context.Context) []any {
+	fs, _ := ctx.Value(ctxKey{}).([]any)
+
 	return fs
 }
 
@@ -76,19 +77,11 @@ func Error(ctx context.Context, l *slog.Logger, msg string, fields ...slog.Attr)
 // 	l.Error(msg, ContextFields(ctx))
 // }
 
-func mergeFields(a, b []slog.Attr) []any {
-	// NOTE: just append() here is unsafe. If a caller passed slice of fields
-	// followed by ... with capacity greater than length, then simultaneous
-	// logging will lead to a data race condition.
-	//
-	// See https://golang.org/ref/spec#Passing_arguments_to_..._parameters
-	c := make([]slog.Attr, len(a)+len(b))
-	n := copy(c, a)
-	copy(c[n:], b)
-
-	res := make([]any, len(c))
-	for i := range res {
-		res[i] = c[i]
+func mergeFields(a []any, b []slog.Attr) []any {
+	res := make([]any, len(a)+len(b))
+	copy(res, a)
+	for i := 0; i < len(b); i++ {
+		res[len(a)+i] = b[i]
 	}
 	return res
 }

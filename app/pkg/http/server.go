@@ -49,6 +49,7 @@ func NewHTTPServer(
 ) (*HTTPServer, error) {
 	mux := chi.NewMux()
 
+	mux.Use(RequestIDMiddleware)
 	// mux.Use(metrics.NewHTTPMetricsMiddleware(registry))
 	// mux.Use(tracer.NewHTTPTraceMiddleware(tracer.WithExcludedPath("/metrics")))
 

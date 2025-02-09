@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/render"
@@ -45,7 +46,7 @@ func (h *Diagram) Load(w http.ResponseWriter, r *http.Request) {
 
 	req := LoadDiagramRequest{
 		UserID: r.Header.Get(XUserIDHeader),
-		Code:   chi.URLParam(r, "code"),
+		Code:   strings.ToLower(chi.URLParam(r, "code")),
 	}
 
 	if err := validator.New().Struct(req); err != nil {

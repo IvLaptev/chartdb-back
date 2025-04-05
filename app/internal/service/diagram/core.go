@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"strings"
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
@@ -47,7 +48,7 @@ func (s *ServiceImpl) Load(ctx context.Context, params *LoadDiagramParams) (*mod
 		},
 		{
 			Key:       model.TermKeyCode,
-			Value:     params.Code,
+			Value:     strings.ToLower(params.Code),
 			Operation: model.FilterOperationExact,
 		},
 	}

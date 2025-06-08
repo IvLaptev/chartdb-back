@@ -46,7 +46,7 @@ func (a *application) Run(ctx context.Context) error {
 		"/api/diagrams": (&handler.Diagram{
 			DiagramService: diagramService,
 		}).Router(),
-	})
+	}, a.logger)
 	if err != nil {
 		return fmt.Errorf("new http server: %w", err)
 	}

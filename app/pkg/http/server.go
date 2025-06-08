@@ -3,9 +3,12 @@ package http
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"net/http"
 	"strings"
 
+	"github.com/IvLaptev/chartdb-back/pkg/metrics"
+	"github.com/IvLaptev/chartdb-back/pkg/middleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/cors"
 )
@@ -14,6 +17,7 @@ type HTTPServerConfig struct {
 	Port      uint64
 	TLSConfig HTTPTLSConfig
 	CORS      *CORSConfig
+	Recovery  middleware.RecoveryConfig `yaml:"recovery"`
 }
 
 type HTTPTLSConfig struct {
@@ -46,12 +50,14 @@ func (s *HTTPServer) Shutdown(ctx context.Context) error {
 func NewHTTPServer(
 	cfg HTTPServerConfig,
 	routers map[string]chi.Router,
+	logger *slog.Logger,
 ) (*HTTPServer, error) {
 	mux := chi.NewMux()
 
+	// Order is important - recovery first, then metrics, then other middleware
+	mux.Use(middleware.RecoveryMiddleware(logger, cfg.Recovery))
+	mux.Use(metrics.MetricsMiddleware)
 	mux.Use(RequestIDMiddleware)
-	// mux.Use(metrics.NewHTTPMetricsMiddleware(registry))
-	// mux.Use(tracer.NewHTTPTraceMiddleware(tracer.WithExcludedPath("/metrics")))
 
 	if cfg.CORS != nil {
 		origins := strings.Split(cfg.CORS.Origins, ",")
@@ -62,6 +68,8 @@ func NewHTTPServer(
 			AllowCredentials: true,
 		}))
 	}
+
+	mux.Handle("/metrics", metrics.Handler())
 
 	for pattern, router := range routers {
 		mux.Mount(pattern, router)

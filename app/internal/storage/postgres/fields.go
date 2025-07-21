@@ -8,5 +8,11 @@ const (
 	fieldObjectStorageKey = "object_storage_key"
 
 	fieldCreatedAt = "created_at"
+	fieldUpdatedAt = "updated_at"
 	fieldDeletedAt = "deleted_at"
+)
+
+const (
+	returning = "RETURNING "
+	separator = ","
 )

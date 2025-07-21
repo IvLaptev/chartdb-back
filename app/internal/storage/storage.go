@@ -13,7 +13,8 @@ type Storage interface {
 }
 
 type DiagramRepository interface {
-	GetAllDiagrams(ctx context.Context, filter []*model.FilterTerm) ([]*model.Diagram, error)
+	GetDiagramByID(ctx context.Context, rowPolicy RowPolicy, id model.DiagramID) (*model.Diagram, error)
+	GetAllDiagrams(ctx context.Context, rowPolicy RowPolicy, filter []*model.FilterTerm) ([]*model.Diagram, error)
 
-	CreateDiagram(ctx context.Context, diagram *model.Diagram) error
+	CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
 }

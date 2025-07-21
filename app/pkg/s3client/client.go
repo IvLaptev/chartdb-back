@@ -5,6 +5,7 @@ import (
 	"context"
 	"crypto/sha256"
 	"encoding/base64"
+	"errors"
 	"fmt"
 
 	"github.com/aws/aws-sdk-go-v2/aws"
@@ -12,6 +13,10 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/aws-sdk-go-v2/service/s3/types"
+)
+
+var (
+	ErrContentNotFound = errors.New("content not found")
 )
 
 type S3Config struct {
@@ -59,6 +64,11 @@ func (c *ClientImpl) GetContent(ctx context.Context, key string) (string, error)
 		Key:    aws.String(key),
 	})
 	if err != nil {
+		var notFoundErr *types.NoSuchKey
+		if errors.As(err, &notFoundErr) {
+			return "", ErrContentNotFound
+		}
+
 		return "", fmt.Errorf("get object: %w", err)
 	}
 

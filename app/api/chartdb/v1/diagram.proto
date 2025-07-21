@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package chartdb.v1;
+
+option go_package = "chartdb/v1;chartdb";
+
+import "google/protobuf/timestamp.proto";
+
+message DiagramMetadata {
+    string id = 1;
+    string user_id = 2;
+    string code = 3;
+    string client_diagram_id = 4;
+    
+    google.protobuf.Timestamp created_at = 5;
+    google.protobuf.Timestamp updated_at = 6;
+}
+
+message Diagram {
+    DiagramMetadata metadata = 1;
+    string content = 2;
+}

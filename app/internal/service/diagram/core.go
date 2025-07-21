@@ -5,11 +5,12 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"strings"
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
 	"github.com/IvLaptev/chartdb-back/internal/utils"
+	"github.com/IvLaptev/chartdb-back/pkg/ctxlog"
+	xerrors "github.com/IvLaptev/chartdb-back/pkg/errors"
 	"github.com/IvLaptev/chartdb-back/pkg/s3client"
 )
 
@@ -20,12 +21,13 @@ const (
 )
 
 var (
-	ErrDiagramNotFound = errors.New("diagram not found")
+	ErrDiagramNotFound        = errors.New("diagram not found")
+	ErrDiagramContentNotFound = errors.New("diagram content not found")
 )
 
 type Service interface {
-	Load(ctx context.Context, params *LoadDiagramParams) (*model.Diagram, error)
-	Create(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
+	GetDiagram(ctx context.Context, params *GetDiagramParams) (*model.Diagram, error)
+	CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
 }
 
 type ServiceImpl struct {
@@ -34,38 +36,53 @@ type ServiceImpl struct {
 	Logger   *slog.Logger
 }
 
-type LoadDiagramParams struct {
-	UserID model.UserID
-	Code   string
+type GetDiagramParams struct {
+	Identifier string
 }
 
-func (s *ServiceImpl) Load(ctx context.Context, params *LoadDiagramParams) (*model.Diagram, error) {
-	diagramFilters := []*model.FilterTerm{
-		{
-			Key:       model.TermKeyUserID,
-			Value:     params.UserID.String(),
-			Operation: model.FilterOperationExact,
-		},
-		{
-			Key:       model.TermKeyCode,
-			Value:     strings.ToLower(params.Code),
-			Operation: model.FilterOperationExact,
-		},
-	}
+func (s *ServiceImpl) GetDiagram(ctx context.Context, params *GetDiagramParams) (*model.Diagram, error) {
+	ctxlog.Info(ctx, s.Logger, "get diagram", slog.Any("params", params))
 
-	diagramsList, err := s.Storage.Diagram().GetAllDiagrams(ctx, diagramFilters)
+	rowPolicy, err := storage.RowPolicyFromContext(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("get all diagrams: %w", err)
+		return nil, fmt.Errorf("row polycy from context: %w", err)
 	}
 
-	if len(diagramsList) != 1 {
-		return nil, ErrDiagramNotFound
+	var diagramModel *model.Diagram
+	diagramList, err := s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, []*model.FilterTerm{
+		{
+			Key:       model.TermKeyID,
+			Value:     params.Identifier,
+			Operation: model.FilterOperationExact,
+		},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get all diagrams by id: %w", err)
 	}
 
-	diagramModel := diagramsList[0]
+	if len(diagramList) == 0 {
+		diagramList, err = s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, []*model.FilterTerm{
+			{
+				Key:       model.TermKeyCode,
+				Value:     params.Identifier,
+				Operation: model.FilterOperationExact,
+			},
+		})
+		if err != nil {
+			return nil, fmt.Errorf("get all diagrams by code: %w", err)
+		}
+		if len(diagramList) == 0 {
+			return nil, xerrors.WrapNotFound(ErrDiagramNotFound)
+		}
+	}
+
+	diagramModel = diagramList[0]
 
 	content, err := s.S3Client.GetContent(ctx, diagramModel.ObjectStorageKey)
 	if err != nil {
+		if errors.Is(err, s3client.ErrContentNotFound) {
+			return nil, xerrors.WrapNotFound(ErrDiagramContentNotFound)
+		}
 		return nil, fmt.Errorf("get content: %w", err)
 	}
 
@@ -80,7 +97,9 @@ type CreateDiagramParams struct {
 	Content         string
 }
 
-func (s *ServiceImpl) Create(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error) {
+func (s *ServiceImpl) CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error) {
+	ctxlog.Info(ctx, s.Logger, "create diagram", slog.Any("params", params))
+
 	diagramID, err := utils.GenerateID(diagramIDLength)
 	if err != nil {
 		return nil, fmt.Errorf("generate id: %w", err)
@@ -88,25 +107,23 @@ func (s *ServiceImpl) Create(ctx context.Context, params *CreateDiagramParams) (
 
 	code, err := utils.GenerateID(codeLength)
 	if err != nil {
-		return nil, fmt.Errorf("generate id: %w", err)
+		return nil, fmt.Errorf("generate id (code): %w", err)
 	}
 
 	objStorageKey, err := utils.GenerateID(objectStorageKeyLength)
 	if err != nil {
-		return nil, fmt.Errorf("generate id: %w", err)
+		return nil, fmt.Errorf("generate id (storage key): %w", err)
 	}
 
-	diagramModel := model.Diagram{
-		ID:               model.DiagramID(diagramID),
-		ClientDiagramID:  params.ClientDiagramID,
-		Code:             code,
-		UserID:           params.UserID,
-		ObjectStorageKey: objStorageKey,
-		Content:          &params.Content,
-	}
-
+	var diagramModel *model.Diagram
 	err = s.Storage.DoInTransaction(ctx, func(ctx context.Context) error {
-		err := s.Storage.Diagram().CreateDiagram(ctx, &diagramModel)
+		diagramModel, err = s.Storage.Diagram().CreateDiagram(ctx, &storage.CreateDiagramParams{
+			ID:               model.DiagramID(diagramID),
+			ClientDiagramID:  params.ClientDiagramID,
+			Code:             code,
+			UserID:           params.UserID,
+			ObjectStorageKey: objStorageKey,
+		})
 		if err != nil {
 			return fmt.Errorf("create diagram: %w", err)
 		}
@@ -116,13 +133,15 @@ func (s *ServiceImpl) Create(ctx context.Context, params *CreateDiagramParams) (
 			return fmt.Errorf("save content: %w", err)
 		}
 
+		diagramModel.Content = &params.Content
+
 		return nil
 	})
 	if err != nil {
-		return nil, fmt.Errorf("failed to create diagram: %w", err)
+		return nil, fmt.Errorf("can't create diagram: %w", err)
 	}
 
-	return &diagramModel, nil
+	return diagramModel, nil
 }
 
 func NewService(logger *slog.Logger, storage storage.Storage, s3Client s3client.Client) *ServiceImpl {

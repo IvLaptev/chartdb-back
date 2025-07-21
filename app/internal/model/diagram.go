@@ -1,5 +1,7 @@
 package model
 
+import "time"
+
 type DiagramID string
 
 func (i DiagramID) String() string {
@@ -13,4 +15,6 @@ type Diagram struct {
 	UserID           UserID
 	ObjectStorageKey string
 	Content          *string
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
 }

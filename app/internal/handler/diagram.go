@@ -1,125 +1,74 @@
 package handler
 
 import (
-	"encoding/base64"
-	"errors"
-	"net/http"
+	"context"
+	"fmt"
+	"log/slog"
 	"strings"
 
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/render"
-	"github.com/go-playground/validator/v10"
+	"google.golang.org/protobuf/types/known/timestamppb"
 
+	chartdbapi "github.com/IvLaptev/chartdb-back/api/chartdb/v1"
+	"github.com/IvLaptev/chartdb-back/internal/auth"
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/service/diagram"
-	xhttp "github.com/IvLaptev/chartdb-back/pkg/http"
 )
 
-const (
-	XUserIDHeader = "x-user-id"
-)
+type DiagramHandler struct {
+	chartdbapi.UnimplementedDiagramServiceServer
 
-type Diagram struct {
+	Logger         *slog.Logger
 	DiagramService diagram.Service
 }
 
-func (h *Diagram) Router() chi.Router {
-	r := chi.NewRouter()
-
-	r.Post("/", h.Create)
-	r.Get("/{code}", h.Load)
-
-	return r
-}
-
-type LoadDiagramRequest struct {
-	UserID string `json:"user_id" validate:"required"`
-	Code   string `json:"code" validate:"len=4,required,alphanum"`
-}
-
-type LoadDiagramResponse struct {
-	Content string `json:"content"`
-}
-
-func (h *Diagram) Load(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	req := LoadDiagramRequest{
-		UserID: r.Header.Get(XUserIDHeader),
-		Code:   strings.ToLower(chi.URLParam(r, "code")),
-	}
-
-	if err := validator.New().Struct(req); err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(err))
-		return
-	}
-
-	userID, err := base64.StdEncoding.DecodeString(req.UserID)
-	if err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(errors.New("invalid user id")))
-		return
-	}
-
-	diagramModel, err := h.DiagramService.Load(ctx, &diagram.LoadDiagramParams{
-		UserID: model.UserID(userID),
-		Code:   req.Code,
+func (h *DiagramHandler) Get(ctx context.Context, req *chartdbapi.GetDiagramRequest) (*chartdbapi.Diagram, error) {
+	diagramModel, err := h.DiagramService.GetDiagram(ctx, &diagram.GetDiagramParams{
+		Identifier: strings.ToLower(req.Identifier),
 	})
 	if err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(err))
-		return
+		return nil, fmt.Errorf("get diagram: %w", err)
 	}
 
-	render.JSON(w, r, LoadDiagramResponse{
-		Content: *diagramModel.Content,
-	})
+	return diagramToPB(diagramModel)
 }
 
-type CreateDiagramRequest struct {
-	UserID          string `json:"user_id" validate:"required"`
-	ClientDiagramID string `json:"client_diagram_id" validate:"len=4,required,alphanum"`
-	Content         string `json:"content" validate:"required"`
-}
-
-type CreateDiagramResponse struct {
-	Code            string `json:"code"`
-	ClientDiagramID string `json:"client_diagram_id"`
-}
-
-func (h *Diagram) Create(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	var req CreateDiagramRequest
-	err := render.DecodeJSON(r.Body, &req)
+func (h *DiagramHandler) Create(ctx context.Context, req *chartdbapi.CreateDiagramRequest) (*chartdbapi.DiagramMetadata, error) {
+	subject, err := auth.GetSubject(ctx)
 	if err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(err))
-		return
+		return nil, fmt.Errorf("get subject: %w", err)
 	}
 
-	req.UserID = r.Header.Get(XUserIDHeader)
-
-	if err = validator.New().Struct(req); err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(err))
-		return
-	}
-
-	userID, err := base64.StdEncoding.DecodeString(req.UserID)
-	if err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(errors.New("invalid user id")))
-		return
-	}
-
-	diagramModel, err := h.DiagramService.Create(ctx, &diagram.CreateDiagramParams{
-		ClientDiagramID: req.ClientDiagramID,
-		UserID:          model.UserID(userID),
+	diagramModel, err := h.DiagramService.CreateDiagram(ctx, &diagram.CreateDiagramParams{
+		ClientDiagramID: req.ClientDiagramId,
+		UserID:          subject.UserID,
 		Content:         req.Content,
 	})
 	if err != nil {
-		render.Render(w, r, xhttp.ErrInvalidRequest(err))
-		return
+		return nil, fmt.Errorf("create diagram: %w", err)
 	}
 
-	render.JSON(w, r, CreateDiagramResponse{
-		ClientDiagramID: diagramModel.ClientDiagramID,
+	return diagramMetadataToPB(diagramModel), nil
+}
+
+func diagramMetadataToPB(diagramModel *model.Diagram) *chartdbapi.DiagramMetadata {
+	return &chartdbapi.DiagramMetadata{
+		Id:              diagramModel.ID.String(),
+		UserId:          diagramModel.UserID.String(),
+		ClientDiagramId: diagramModel.ClientDiagramID,
 		Code:            diagramModel.Code,
-	})
+		CreatedAt:       timestamppb.New(diagramModel.CreatedAt),
+		UpdatedAt:       timestamppb.New(diagramModel.UpdatedAt),
+	}
+}
+
+func diagramToPB(diagramModel *model.Diagram) (*chartdbapi.Diagram, error) {
+	content := ""
+	if diagramModel.Content != nil {
+		content = *diagramModel.Content
+	}
+
+	return &chartdbapi.Diagram{
+		Metadata: diagramMetadataToPB(diagramModel),
+		Content:  content,
+	}, nil
 }

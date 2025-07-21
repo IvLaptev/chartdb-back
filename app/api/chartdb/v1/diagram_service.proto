@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+package chartdb.v1;
+
+option go_package = "chartdb/v1;chartdb";
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "chartdb/v1/diagram.proto";
+
+service DiagramService {
+    rpc Get(GetDiagramRequest) returns (Diagram) {
+        option (google.api.http) = {
+            get: "/chartdb/v1/diagrams/{identifier}"
+        };
+    };
+
+    rpc Create(CreateDiagramRequest) returns (DiagramMetadata) {
+        option (google.api.http) = {
+            post: "/chartdb/v1/diagrams"
+            body: "*"
+        };
+    };
+}
+
+message GetDiagramRequest {
+    // Could be diagram ID or its code
+    string identifier = 1 [
+        (buf.validate.field).required = true
+    ];
+}
+
+message CreateDiagramRequest {
+    string client_diagram_id = 2 [
+        (buf.validate.field).string.min_len = 4,
+        (buf.validate.field).required = true
+    ];
+
+    string content = 3 [
+        (buf.validate.field).required = true
+    ];
+}

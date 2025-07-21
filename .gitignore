@@ -1,3 +1,7 @@
 local_config.yaml
 config.yaml
 auth_key.json
+prod.sql
+
+# Exclude generated files
+*.pb*.go

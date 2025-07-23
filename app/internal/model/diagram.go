@@ -14,6 +14,8 @@ type Diagram struct {
 	Code             string
 	UserID           UserID
 	ObjectStorageKey string
+	Name             string
+	TablesCount      int64
 	Content          *string
 	CreatedAt        time.Time
 	UpdatedAt        time.Time

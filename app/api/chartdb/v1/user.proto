@@ -15,9 +15,12 @@ enum UserType {
 }
 
 message User {
+    reserved 4 to 99;
+
     string id = 1;
     string login = 2;
     UserType type = 3;
-    google.protobuf.Timestamp created_at = 4;
-    google.protobuf.Timestamp updated_at = 5;
+
+    google.protobuf.Timestamp created_at = 100;
+    google.protobuf.Timestamp updated_at = 101;
 }

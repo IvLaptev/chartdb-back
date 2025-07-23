@@ -35,7 +35,7 @@ func HTTPAuthMiddleware(logger *slog.Logger, authService authService) func(next 
 
 			ctx, err := authService.Authenticate(ctx, authHeader)
 			if err != nil {
-				if err := xerrors.HTTPErrorHandler(w, err); err != nil {
+				if internalErr := xerrors.HTTPErrorHandler(w, err); internalErr != nil {
 					ctxlog.Error(ctx, logger, "http error handler", slog.Any("error", err))
 				}
 				return

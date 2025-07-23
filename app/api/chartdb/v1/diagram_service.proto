@@ -6,6 +6,8 @@ option go_package = "chartdb/v1;chartdb";
 
 import "buf/validate/validate.proto";
 import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
 import "chartdb/v1/diagram.proto";
 
 service DiagramService {
@@ -15,10 +17,29 @@ service DiagramService {
         };
     };
 
+    rpc List(ListDiagramsRequest) returns (ListDiagramsResponse) {
+        option (google.api.http) = {
+            get: "/chartdb/v1/diagrams"
+        };
+    };
+
     rpc Create(CreateDiagramRequest) returns (DiagramMetadata) {
         option (google.api.http) = {
             post: "/chartdb/v1/diagrams"
             body: "*"
+        };
+    };
+
+    rpc Update(UpdateDiagramRequest) returns (DiagramMetadata) {
+        option (google.api.http) = {
+            patch: "/chartdb/v1/diagrams/{id}"
+            body: "fields"
+        };
+    };
+
+    rpc Delete(DeleteDiagramRequest) returns (google.protobuf.Empty) {
+        option (google.api.http) = {
+            delete: "/chartdb/v1/diagrams/{id}"
         };
     };
 }
@@ -30,6 +51,14 @@ message GetDiagramRequest {
     ];
 }
 
+message ListDiagramsRequest {
+    string filter = 1;
+}
+
+message ListDiagramsResponse {
+    repeated DiagramMetadata diagrams = 1;
+}
+
 message CreateDiagramRequest {
     string client_diagram_id = 2 [
         (buf.validate.field).string.min_len = 4,
@@ -37,6 +66,36 @@ message CreateDiagramRequest {
     ];
 
     string content = 3 [
+        (buf.validate.field).required = true
+    ];
+
+    string name = 4 [
+        (buf.validate.field).required = true
+    ];
+
+    int64 tables_count = 5 [
+        (buf.validate.field).required = true
+    ];
+}
+
+message UpdateDiagramRequest {
+    string id = 1 [
+        (buf.validate.field).required = true
+    ];
+
+    UpdateFields fields = 2;
+
+    google.protobuf.FieldMask update_mask = 3;
+
+    message UpdateFields {
+        string content = 1;
+        string name = 2;
+        int64 tables_count = 3;
+    }
+}
+
+message DeleteDiagramRequest {
+    string id = 1 [
         (buf.validate.field).required = true
     ];
 }

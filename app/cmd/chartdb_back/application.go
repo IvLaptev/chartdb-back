@@ -58,6 +58,9 @@ func (a *application) Run(ctx context.Context) error {
 	userService := user.NewService(a.logger, dbStorage, emailSender, 30*time.Minute, []byte(a.config.Auth.TokenSecret))
 
 	httpServer, err := newChartDBServer(ctx, a.logger, a.config.HTTPServer, userService, diagramService)
+	if err != nil {
+		return fmt.Errorf("new chartdb server: %w", err)
+	}
 
 	runner.RunGraceContext(httpServer.Run, httpServer.Shutdown)
 
@@ -72,13 +75,13 @@ func newChartDBServer(
 	diagramService diagram.Service,
 ) (*xhttp.HTTPServer, error) {
 	chartDBHandler := runtime.NewServeMux(
-		runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, err error) {
-			if err := xerrors.HTTPErrorHandler(w, err); err != nil {
+		runtime.WithErrorHandler(func(ctx context.Context, sm *runtime.ServeMux, m runtime.Marshaler, w http.ResponseWriter, r *http.Request, originalErr error) {
+			if err := xerrors.HTTPErrorHandler(w, originalErr); err != nil {
 				ctxlog.Error(ctx, logger, "http error handler", slog.Any("error", err))
 				return
 			}
 
-			ctxlog.Info(ctx, logger, "error handled", slog.Any("error", err))
+			ctxlog.Info(ctx, logger, "error handled", slog.Any("error", originalErr))
 		}),
 	)
 

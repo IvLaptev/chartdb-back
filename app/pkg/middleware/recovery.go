@@ -24,7 +24,10 @@ func RecoveryMiddleware(logger *slog.Logger, cfg RecoveryConfig) func(http.Handl
 
 						// Return 500 error
 						w.WriteHeader(http.StatusInternalServerError)
-						w.Write([]byte("internal server error"))
+						_, err := w.Write([]byte("internal server error"))
+						if err != nil {
+							logger.Error("failed to write response", slog.Any("error", err))
+						}
 					} else {
 						// Re-throw panic if recovery is disabled
 						panic(err)

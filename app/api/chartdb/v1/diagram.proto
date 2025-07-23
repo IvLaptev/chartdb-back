@@ -7,13 +7,17 @@ option go_package = "chartdb/v1;chartdb";
 import "google/protobuf/timestamp.proto";
 
 message DiagramMetadata {
+    reserved 7 to 99;
+
     string id = 1;
     string user_id = 2;
     string code = 3;
     string client_diagram_id = 4;
+    string name = 5;
+    int64 tables_count = 6;
     
-    google.protobuf.Timestamp created_at = 5;
-    google.protobuf.Timestamp updated_at = 6;
+    google.protobuf.Timestamp created_at = 100;
+    google.protobuf.Timestamp updated_at = 101;
 }
 
 message Diagram {

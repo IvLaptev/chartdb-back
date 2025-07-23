@@ -21,13 +21,13 @@ type jsonError struct {
 func HTTPErrorHandler(w http.ResponseWriter, err error) error {
 	var resultErr *Error
 	if !errors.As(err, &resultErr) {
-		err := writeJSONError(w, jsonError{
+		writeErr := writeJSONError(w, jsonError{
 			Message: msgInternalServerError,
 			Code:    http.StatusInternalServerError,
-			Details: err.Error(),
+			Details: "",
 		})
-		if err != nil {
-			return fmt.Errorf("write json error: %w", err)
+		if writeErr != nil {
+			return fmt.Errorf("write json error: %w", writeErr)
 		}
 
 		return nil
@@ -51,6 +51,12 @@ func HTTPErrorHandler(w http.ResponseWriter, err error) error {
 		jsonErr = jsonError{
 			Message: resultErr.message,
 			Code:    http.StatusBadRequest,
+			Details: resultErr.Error(),
+		}
+	case ErrorStatusForbidden:
+		jsonErr = jsonError{
+			Message: resultErr.message,
+			Code:    http.StatusForbidden,
 			Details: resultErr.Error(),
 		}
 	default:

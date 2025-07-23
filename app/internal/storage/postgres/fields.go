@@ -6,6 +6,8 @@ const (
 	fieldClientDiagramID  = "client_diagram_id"
 	fieldCode             = "code"
 	fieldObjectStorageKey = "object_storage_key"
+	fieldName             = "name"
+	fieldTablesCount      = "tables_count"
 
 	fieldLogin        = "login"
 	fieldPasswordHash = "password_hash"

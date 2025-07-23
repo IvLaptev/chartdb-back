@@ -5,8 +5,6 @@ import "errors"
 // ErrMissing happens when optional has no value set
 var ErrMissing = errors.New("optional has no value")
 
-const mustErrorMsg = "requested must-have optional value but its missing"
-
 // Optional holds T value
 type Optional[T any] struct {
 	Value T

@@ -12,6 +12,7 @@ import (
 	"github.com/IvLaptev/chartdb-back/internal/storage"
 	"github.com/IvLaptev/chartdb-back/pkg/ctxlog"
 	xstorage "github.com/IvLaptev/chartdb-back/pkg/storage"
+	sq "github.com/Masterminds/squirrel"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
 	"github.com/jmoiron/sqlx"
@@ -212,4 +213,11 @@ func connectionString(cfg Config) string {
 		keyValues = append(keyValues, key+"="+value)
 	}
 	return strings.Join(keyValues, " ")
+}
+
+// useLock adds a FOR UPDATE clause with explicit table locking to the query.
+// Specify the name of the main table to ensure consistent lock acquisition order and prevent
+// deadlocks. See for details: BAREMETAL-1548
+func useLock(query sq.SelectBuilder, lockedTableName string) sq.SelectBuilder {
+	return query.Suffix("FOR UPDATE OF " + lockedTableName)
 }

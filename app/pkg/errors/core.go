@@ -7,12 +7,14 @@ const (
 	ErrorStatusNotFound
 	ErrorStatusUnauthenticated
 	ErrorStatusInvalidArgument
+	ErrorStatusForbidden
 )
 
 const (
 	msgNotFound        = "not found"
 	msgUnauthenticated = "unauthenticated"
 	msgInvalidArgument = "invalid argument"
+	msgForbidden       = "forbidden"
 
 	msgInternalServerError = "internal server error"
 )
@@ -53,6 +55,10 @@ func WrapNotFound(err error) *Error {
 
 func WrapUnauthenticated(err error) *Error {
 	return WrapError(err, ErrorStatusUnauthenticated, msgUnauthenticated)
+}
+
+func WrapForbidden(err error) *Error {
+	return WrapError(err, ErrorStatusForbidden, msgForbidden)
 }
 
 func WrapInvalidArgument(err error) *Error {

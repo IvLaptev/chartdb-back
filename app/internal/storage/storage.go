@@ -15,10 +15,13 @@ type Storage interface {
 }
 
 type DiagramRepository interface {
-	GetDiagramByID(ctx context.Context, rowPolicy RowPolicy, id model.DiagramID) (*model.Diagram, error)
+	// Supported options: [WithLock]
+	GetDiagramByID(ctx context.Context, rowPolicy RowPolicy, id model.DiagramID, opts ...RequestOption) (*model.Diagram, error)
 	GetAllDiagrams(ctx context.Context, rowPolicy RowPolicy, filter []*model.FilterTerm) ([]*model.Diagram, error)
 
 	CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
+	PatchDiagram(ctx context.Context, params *PatchDiagramParams) (*model.Diagram, error)
+	DeleteDiagram(ctx context.Context, id model.DiagramID) (*model.Diagram, error)
 }
 
 type UserRepository interface {

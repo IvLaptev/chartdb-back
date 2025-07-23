@@ -22,7 +22,7 @@ var ErrSignalExit = errors.New("signal")
 
 type runner struct {
 	logger *slog.Logger
-	cfg    RunnerConfig
+	cfg    *RunnerConfig
 
 	errG     *errgroup.Group
 	aliveCTX context.Context
@@ -33,7 +33,7 @@ func NewRunner(ctx context.Context, logger *slog.Logger, cfg RunnerConfig) (runn
 
 	return runner{
 		logger: logger,
-		cfg:    cfg,
+		cfg:    &cfg,
 
 		aliveCTX: ctx,
 		errG:     errG,

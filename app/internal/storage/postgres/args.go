@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
 )
 
@@ -111,7 +112,26 @@ func resolveTermField(key model.TermKey) (string, error) {
 		return fieldCode, nil
 	case model.TermKeyUserID:
 		return fieldUserID, nil
+	case model.TermKeyLogin:
+		return fieldLogin, nil
+	case model.TermKeyPasswordHash:
+		return fieldPasswordHash, nil
+	case model.TermKeyType:
+		return fieldType, nil
+	case model.TermKeyConfirmedAt:
+		return fieldConfirmedAt, nil
 	default:
 		return "", fmt.Errorf("unsupported termKey type: %d", key)
 	}
+}
+
+func patchQueryOptional[T any](
+	query sq.UpdateBuilder,
+	fieldName string,
+	optValue utils.Optional[T],
+) sq.UpdateBuilder {
+	if optValue.Valid {
+		query = query.Set(fieldName, optValue.Value)
+	}
+	return query
 }

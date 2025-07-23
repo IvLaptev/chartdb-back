@@ -6,11 +6,13 @@ const (
 	ErrorStatusUnspecified ErrorStatus = iota
 	ErrorStatusNotFound
 	ErrorStatusUnauthenticated
+	ErrorStatusInvalidArgument
 )
 
 const (
 	msgNotFound        = "not found"
 	msgUnauthenticated = "unauthenticated"
+	msgInvalidArgument = "invalid argument"
 
 	msgInternalServerError = "internal server error"
 )
@@ -51,4 +53,8 @@ func WrapNotFound(err error) *Error {
 
 func WrapUnauthenticated(err error) *Error {
 	return WrapError(err, ErrorStatusUnauthenticated, msgUnauthenticated)
+}
+
+func WrapInvalidArgument(err error) *Error {
+	return WrapError(err, ErrorStatusInvalidArgument, msgInvalidArgument)
 }

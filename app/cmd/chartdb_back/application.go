@@ -5,18 +5,20 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"time"
 
 	chartdbapi "github.com/IvLaptev/chartdb-back/api/chartdb/v1"
 	"github.com/IvLaptev/chartdb-back/internal/handler"
 	"github.com/IvLaptev/chartdb-back/internal/service/diagram"
 	"github.com/IvLaptev/chartdb-back/internal/service/user"
 	"github.com/IvLaptev/chartdb-back/internal/storage/postgres"
-	"github.com/IvLaptev/chartdb-back/internal/utils"
 	"github.com/IvLaptev/chartdb-back/pkg/ctxlog"
+	"github.com/IvLaptev/chartdb-back/pkg/emailsender"
 	xerrors "github.com/IvLaptev/chartdb-back/pkg/errors"
 	xhttp "github.com/IvLaptev/chartdb-back/pkg/http"
 	"github.com/IvLaptev/chartdb-back/pkg/middleware"
 	"github.com/IvLaptev/chartdb-back/pkg/s3client"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 )
 
@@ -46,9 +48,14 @@ func (a *application) Run(ctx context.Context) error {
 	}
 	runner.RunExternal(dbStorage.Shutdown)
 
+	emailSender, err := emailsender.NewGomailSender(a.config.EmailSender)
+	if err != nil {
+		return fmt.Errorf("new gomail sender: %w", err)
+	}
+
 	diagramService := diagram.NewService(a.logger, dbStorage, objectStorageClient)
 
-	userService := user.NewService(a.logger)
+	userService := user.NewService(a.logger, dbStorage, emailSender, 30*time.Minute, []byte(a.config.Auth.TokenSecret))
 
 	httpServer, err := newChartDBServer(ctx, a.logger, a.config.HTTPServer, userService, diagramService)
 
@@ -87,6 +94,18 @@ func newChartDBServer(
 		return nil, fmt.Errorf("register diagram service handler server: %w", err)
 	}
 
+	err = chartdbapi.RegisterUserServiceHandlerServer(
+		ctx,
+		chartDBHandler,
+		&handler.UserHandler{
+			Logger:      logger,
+			UserService: userService,
+		},
+	)
+	if err != nil {
+		return nil, fmt.Errorf("register user service handler server: %w", err)
+	}
+
 	httpServer, err := xhttp.NewHTTPServer(
 		config,
 		logger,
@@ -96,6 +115,9 @@ func newChartDBServer(
 		map[string]http.Handler{
 			"/chartdb/v1/diagrams/{id}": chartDBHandler,
 			"/chartdb/v1/diagrams":      chartDBHandler,
+			"/chartdb/v1/users":         chartDBHandler,
+			"/chartdb/v1/users:confirm": chartDBHandler,
+			"/chartdb/v1/users:login":   chartDBHandler,
 		})
 	if err != nil {
 		return nil, fmt.Errorf("new http server: %w", err)

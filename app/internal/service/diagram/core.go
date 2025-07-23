@@ -8,10 +8,10 @@ import (
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
-	"github.com/IvLaptev/chartdb-back/internal/utils"
 	"github.com/IvLaptev/chartdb-back/pkg/ctxlog"
 	xerrors "github.com/IvLaptev/chartdb-back/pkg/errors"
 	"github.com/IvLaptev/chartdb-back/pkg/s3client"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 )
 
 const (

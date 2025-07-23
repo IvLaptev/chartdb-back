@@ -47,11 +47,17 @@ func HTTPErrorHandler(w http.ResponseWriter, err error) error {
 			Code:    http.StatusUnauthorized,
 			Details: resultErr.Error(),
 		}
+	case ErrorStatusInvalidArgument:
+		jsonErr = jsonError{
+			Message: resultErr.message,
+			Code:    http.StatusBadRequest,
+			Details: resultErr.Error(),
+		}
 	default:
 		jsonErr = jsonError{
 			Message: msgInternalServerError,
 			Code:    http.StatusInternalServerError,
-			Details: resultErr.Error(),
+			Details: "",
 		}
 	}
 

@@ -9,7 +9,7 @@ import (
 	"log/slog"
 	"os"
 
-	"github.com/IvLaptev/chartdb-back/internal/utils"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	"github.com/ilyakaznacheev/cleanenv"
 	"github.com/spf13/pflag"
 )

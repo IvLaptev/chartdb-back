@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package chartdb.v1;
+
+option go_package = "chartdb/v1;chartdb";
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "chartdb/v1/user.proto";
+
+service UserService {
+    // rpc Get(GetUserRequest) returns (User) {
+    //     option (google.api.http) = {
+    //         get: "/chartdb/v1/users/{id}"
+    //     };
+    // }
+
+    rpc Create(CreateUserRequest) returns (User) {
+        option (google.api.http) = {
+            post: "/chartdb/v1/users"
+            body: "*"
+        };
+    }
+
+    rpc Login(LoginUserRequest) returns (LoginUserResponse) {
+        option (google.api.http) = {
+            post: "/chartdb/v1/users:login"
+            body: "*"
+        };
+    }
+
+    rpc Confirm(ConfirmUserRequest) returns (User) {
+        option (google.api.http) = {
+            post: "/chartdb/v1/users:confirm"
+            body: "*"
+        };
+    }
+}
+
+message GetUserRequest {
+    string id = 1;
+}
+
+message CreateUserRequest {
+    string login = 1 [
+        (buf.validate.field).required = true
+    ];
+
+    string password = 2;
+}
+
+message LoginUserRequest {
+    string login = 1 [
+        (buf.validate.field).required = true
+    ];
+
+    string password = 2 [
+        (buf.validate.field).required = true
+    ];
+}
+
+message LoginUserResponse {
+    string token = 1;
+}
+
+message ConfirmUserRequest {
+    string cid = 1 [
+        (buf.validate.field).required = true
+    ];
+}

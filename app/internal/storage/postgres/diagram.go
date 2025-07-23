@@ -9,6 +9,7 @@ import (
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/jmoiron/sqlx"
 )
 
 const diagramTable = "diagrams"
@@ -45,7 +46,7 @@ func (s *Storage) GetDiagramByID(ctx context.Context, rowPolicy storage.RowPolic
 	sql, args := query.MustSql()
 
 	var diagramEntity diagramEntity
-	err = s.db.GetContext(ctx, &diagramEntity, sql, args...)
+	err = sqlx.GetContext(ctx, s.DB(ctx), &diagramEntity, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func (s *Storage) GetAllDiagrams(ctx context.Context, rowPolicy storage.RowPolic
 	sql, args := query.MustSql()
 
 	var diagramEntities []*diagramEntity
-	err = s.db.SelectContext(ctx, &diagramEntities, sql, args...)
+	err = sqlx.SelectContext(ctx, s.DB(ctx), &diagramEntities, sql, args...)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +98,7 @@ func (s *Storage) CreateDiagram(ctx context.Context, params *storage.CreateDiagr
 		MustSql()
 
 	var diagramEntity diagramEntity
-	err := s.db.GetContext(ctx, &diagramEntity, sql, args...)
+	err := sqlx.GetContext(ctx, s.DB(ctx), &diagramEntity, sql, args...)
 	if err != nil {
 		return nil, err
 	}

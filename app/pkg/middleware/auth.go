@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	XUserIDHeader = "x-user-id"
+	XUserIDHeader       = "x-user-id"
+	AuthorizationHeader = "authorization"
 )
 
 type authService interface {
@@ -22,7 +23,11 @@ func HTTPAuthMiddleware(logger *slog.Logger, authService authService) func(next 
 		fn := func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 
-			authHeader := r.Header.Get(XUserIDHeader)
+			authHeader := r.Header.Get(AuthorizationHeader)
+			if authHeader == "" {
+				authHeader = r.Header.Get(XUserIDHeader)
+			}
+
 			if authHeader == "" {
 				next.ServeHTTP(w, r)
 				return

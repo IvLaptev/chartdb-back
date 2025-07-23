@@ -5,3 +5,5 @@ prod.sql
 
 # Exclude generated files
 *.pb*.go
+
+*.http

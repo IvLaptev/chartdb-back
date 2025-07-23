@@ -15,7 +15,8 @@ var (
 type subjectKey struct{}
 
 type Subject struct {
-	UserID model.UserID
+	UserID   model.UserID
+	UserType model.UserType
 }
 
 func SetSubject(ctx context.Context, subject *Subject) context.Context {

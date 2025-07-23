@@ -27,6 +27,14 @@ type Storage struct {
 	defaultDBContext *dbContext
 }
 
+func (s *Storage) DB(ctx context.Context) sqlx.ExtContext {
+	if currentDBCtx, ok := getDBContext(ctx); ok {
+		return currentDBCtx.db
+	}
+
+	return s.db
+}
+
 func (s *Storage) DoInTransaction(ctx context.Context, f func(ctx context.Context) error) error {
 	if currentDBCtx, ok := getDBContext(ctx); ok {
 		if currentDBCtx.isTx {
@@ -39,7 +47,14 @@ func (s *Storage) DoInTransaction(ctx context.Context, f func(ctx context.Contex
 		return fmt.Errorf("begin transaction: %w", err)
 	}
 
+	var txID string
+	err = tx.GetContext(ctx, &txID, "SELECT pg_current_xact_id()::text")
+	if err != nil {
+		return fmt.Errorf("get transaction id: %w", err)
+	}
+
 	dbCtx := &dbContext{
+		db:   tx,
 		now:  s.defaultDBContext.now,
 		isTx: true,
 	}
@@ -81,6 +96,14 @@ func (s *Storage) Diagram() storage.DiagramRepository {
 	return s
 }
 
+func (s *Storage) User() storage.UserRepository {
+	return s
+}
+
+func (s *Storage) UserConfirmation() storage.UserConfirmationRepository {
+	return s
+}
+
 func handleTx(tx *sqlx.Tx, err error) error {
 	if err != nil {
 		return tx.Rollback()
@@ -89,6 +112,7 @@ func handleTx(tx *sqlx.Tx, err error) error {
 }
 
 type dbContext struct {
+	db   sqlx.ExtContext
 	now  func() xstorage.Timestamp
 	isTx bool
 }
@@ -151,6 +175,7 @@ func NewStorage(cfg Config, logger *slog.Logger) (*Storage, error) {
 	}
 
 	defaultDBContext := &dbContext{
+		db: db,
 		now: func() xstorage.Timestamp {
 			return xstorage.NewTimestamp(time.Now())
 		},

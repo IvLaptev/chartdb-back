@@ -67,7 +67,7 @@ func NewHTTPServer(
 		origins := strings.Split(cfg.CORS.Origins, ",")
 		mux.Use(cors.Handler(cors.Options{
 			AllowedOrigins:   origins,
-			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+			AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"},
 			AllowedHeaders:   []string{"*"},
 			AllowCredentials: true,
 		}))

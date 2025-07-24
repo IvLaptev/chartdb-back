@@ -44,7 +44,7 @@ var (
 type Service interface {
 	CreateUser(ctx context.Context, params *CreateUserParams) (*model.User, error)
 
-	LoginUser(ctx context.Context, params *LoginUserParams) (string, error)
+	LoginUser(ctx context.Context, params *LoginUserParams) (*model.UserToken, error)
 	ConfirmUser(ctx context.Context, params *ConfirmUserParams) (*model.User, error)
 	Authenticate(ctx context.Context, token string) (context.Context, error)
 }
@@ -155,7 +155,7 @@ type LoginUserParams struct {
 	PasswordHash string
 }
 
-func (s *ServiceImpl) LoginUser(ctx context.Context, params *LoginUserParams) (string, error) {
+func (s *ServiceImpl) LoginUser(ctx context.Context, params *LoginUserParams) (*model.UserToken, error) {
 	ctxlog.Info(ctx, s.Logger, "login user", slog.Any("params", params))
 
 	userList, err := s.Storage.User().GetAllUsers(ctx, []*model.FilterTerm{
@@ -176,19 +176,22 @@ func (s *ServiceImpl) LoginUser(ctx context.Context, params *LoginUserParams) (s
 		},
 	})
 	if err != nil {
-		return "", fmt.Errorf("get all users: %w", err)
+		return nil, fmt.Errorf("get all users: %w", err)
 	}
 
 	if len(userList) == 0 {
-		return "", xerrors.WrapNotFound(ErrUserNotFound)
+		return nil, xerrors.WrapNotFound(ErrUserNotFound)
 	}
 
 	userToken, err := createToken(userList[0], s.tokenSecret)
 	if err != nil {
-		return "", fmt.Errorf("create token: %w", err)
+		return nil, fmt.Errorf("create token: %w", err)
 	}
 
-	return userToken, nil
+	return &model.UserToken{
+		Value:  userToken,
+		UserID: userList[0].ID,
+	}, nil
 }
 
 type ConfirmUserParams struct {

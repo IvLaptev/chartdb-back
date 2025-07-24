@@ -61,6 +61,7 @@ message LoginUserRequest {
 
 message LoginUserResponse {
     string token = 1;
+    string user_id = 2;
 }
 
 message ConfirmUserRequest {

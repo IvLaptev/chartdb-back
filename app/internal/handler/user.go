@@ -52,7 +52,10 @@ func (h *UserHandler) Login(ctx context.Context, req *chartdbapi.LoginUserReques
 		return nil, fmt.Errorf("login user: %w", err)
 	}
 
-	return &chartdbapi.LoginUserResponse{Token: token}, nil
+	return &chartdbapi.LoginUserResponse{
+		Token:  token.Value,
+		UserId: token.UserID.String(),
+	}, nil
 }
 
 func (h *UserHandler) Confirm(ctx context.Context, req *chartdbapi.ConfirmUserRequest) (*chartdbapi.User, error) {

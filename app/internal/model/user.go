@@ -101,3 +101,8 @@ type UserConfirmation struct {
 	CreatedAt time.Time          `json:"created_at"`
 	ExpiresAt time.Time          `json:"expires_at"`
 }
+
+type UserToken struct {
+	Value  string `json:"value"`
+	UserID UserID `json:"user_id"`
+}

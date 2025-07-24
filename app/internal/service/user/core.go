@@ -59,7 +59,7 @@ type ServiceImpl struct {
 }
 
 type CreateUserParams struct {
-	Login        string `validate:"email"`
+	Login        string `validate:"email,endswith=mirea.ru"`
 	PasswordHash *string
 }
 

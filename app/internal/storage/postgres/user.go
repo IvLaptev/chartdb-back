@@ -8,6 +8,7 @@ import (
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
@@ -127,7 +128,7 @@ func userEntityToModel(user *userEntity) (*model.User, error) {
 	return &model.User{
 		ID:           user.ID,
 		Login:        user.Login,
-		PasswordHash: user.PasswordHash,
+		PasswordHash: utils.NewSecret(user.PasswordHash),
 		Type:         userType,
 		CreatedAt:    user.CreatedAt,
 		UpdatedAt:    user.UpdatedAt,

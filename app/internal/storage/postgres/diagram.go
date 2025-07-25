@@ -8,6 +8,7 @@ import (
 
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
 	"github.com/jmoiron/sqlx"
 )
@@ -173,7 +174,7 @@ func diagramEntityToModel(entity *diagramEntity) *model.Diagram {
 		TablesCount:      entity.TablesCount,
 		CreatedAt:        entity.CreatedAt,
 		UpdatedAt:        entity.UpdatedAt,
-		Content:          nil,
+		Content:          utils.NewSecret[*string](nil),
 	}
 }
 

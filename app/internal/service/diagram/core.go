@@ -103,7 +103,7 @@ func (s *ServiceImpl) GetDiagram(ctx context.Context, params *GetDiagramParams) 
 		return nil, fmt.Errorf("get content: %w", err)
 	}
 
-	diagramModel.Content = &content
+	diagramModel.Content = utils.NewSecret(&content)
 
 	return diagramModel, nil
 }
@@ -131,7 +131,7 @@ func (s *ServiceImpl) ListDiagrams(ctx context.Context, params *ListDiagramsPara
 type CreateDiagramParams struct {
 	ClientDiagramID string
 	UserID          model.UserID
-	Content         string
+	Content         utils.Secret[string]
 	Name            string
 	TablesCount     int64
 }
@@ -169,12 +169,12 @@ func (s *ServiceImpl) CreateDiagram(ctx context.Context, params *CreateDiagramPa
 			return fmt.Errorf("create diagram: %w", err)
 		}
 
-		err = s.S3Client.SaveContent(ctx, diagramModel.ObjectStorageKey, params.Content)
+		err = s.S3Client.SaveContent(ctx, diagramModel.ObjectStorageKey, params.Content.Value)
 		if err != nil {
 			return fmt.Errorf("save content: %w", err)
 		}
 
-		diagramModel.Content = &params.Content
+		diagramModel.Content = utils.NewSecret(&params.Content.Value)
 
 		return nil
 	})
@@ -188,7 +188,7 @@ func (s *ServiceImpl) CreateDiagram(ctx context.Context, params *CreateDiagramPa
 type PatchDiagramParams struct {
 	ID model.DiagramID
 
-	Content     utils.Optional[string]
+	Content     utils.Optional[utils.Secret[string]]
 	Name        utils.Optional[string]
 	TablesCount utils.Optional[int64]
 }
@@ -232,7 +232,7 @@ func (s *ServiceImpl) PatchDiagram(ctx context.Context, params *PatchDiagramPara
 			if err != nil {
 				return fmt.Errorf("generate id (storage key): %w", err)
 			}
-			err = s.S3Client.SaveContent(ctx, objectStorageKey, params.Content.Value)
+			err = s.S3Client.SaveContent(ctx, objectStorageKey, params.Content.Value.Value)
 			if err != nil {
 				return fmt.Errorf("save content: %w", err)
 			}

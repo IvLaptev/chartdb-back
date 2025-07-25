@@ -94,14 +94,14 @@ func (s *ServiceImpl) GetUser(ctx context.Context, params *GetUserParams) (*mode
 
 type CreateUserParams struct {
 	Login        string `validate:"email,endswith=mirea.ru"`
-	PasswordHash *string
+	PasswordHash utils.Secret[*string]
 }
 
 func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) (*model.User, error) {
 	ctxlog.Info(ctx, s.Logger, "create user", slog.Any("params", params))
 
 	var userType model.UserType
-	if params.PasswordHash == nil {
+	if params.PasswordHash.Value == nil {
 		userType = model.UserTypeGuest
 	} else {
 		userType = model.UserTypeStudent
@@ -153,7 +153,7 @@ func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) 
 		userModel, err = s.Storage.User().CreateUser(ctx, &storage.CreateUserParams{
 			ID:           model.UserID(userID),
 			Login:        params.Login,
-			PasswordHash: params.PasswordHash,
+			PasswordHash: params.PasswordHash.Value,
 			Type:         userType,
 			ConfirmedAt:  confirmedAt,
 		})
@@ -186,7 +186,7 @@ func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) 
 
 type LoginUserParams struct {
 	Login        string
-	PasswordHash string
+	PasswordHash utils.Secret[string]
 }
 
 func (s *ServiceImpl) LoginUser(ctx context.Context, params *LoginUserParams) (*model.UserToken, error) {
@@ -200,7 +200,7 @@ func (s *ServiceImpl) LoginUser(ctx context.Context, params *LoginUserParams) (*
 		},
 		{
 			Key:       model.TermKeyPasswordHash,
-			Value:     params.PasswordHash,
+			Value:     params.PasswordHash.Value,
 			Operation: model.FilterOperationExact,
 		},
 		{

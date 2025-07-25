@@ -1,6 +1,10 @@
 package model
 
-import "time"
+import (
+	"time"
+
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
+)
 
 type DiagramID string
 
@@ -16,7 +20,7 @@ type Diagram struct {
 	ObjectStorageKey string
 	Name             string
 	TablesCount      int64
-	Content          *string
+	Content          utils.Secret[*string]
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }

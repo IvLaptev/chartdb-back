@@ -13,6 +13,7 @@ import (
 	"github.com/IvLaptev/chartdb-back/internal/auth"
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/service/diagram"
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 )
 
 var diagramAllowedTermKeys = map[model.TermKey]struct{}{}
@@ -62,7 +63,7 @@ func (h *DiagramHandler) Create(ctx context.Context, req *chartdbapi.CreateDiagr
 	diagramModel, err := h.DiagramService.CreateDiagram(ctx, &diagram.CreateDiagramParams{
 		ClientDiagramID: req.ClientDiagramId,
 		UserID:          subject.UserID,
-		Content:         req.Content,
+		Content:         utils.NewSecret(req.Content),
 		Name:            req.Name,
 		TablesCount:     req.TablesCount,
 	})
@@ -81,7 +82,7 @@ func (h *DiagramHandler) Update(ctx context.Context, req *chartdbapi.UpdateDiagr
 
 	patchDiagramParams := &diagram.PatchDiagramParams{
 		ID:          model.DiagramID(req.Id),
-		Content:     ApplyFieldOptional(req.Fields.Content, "content", paths),
+		Content:     ApplyFieldOptional(utils.NewSecret(req.Fields.Content), "content", paths),
 		Name:        ApplyFieldOptional(req.Fields.Name, "name", paths),
 		TablesCount: ApplyFieldOptional(req.Fields.TablesCount, "tables_count", paths),
 	}
@@ -120,8 +121,8 @@ func diagramMetadataToPB(diagramModel *model.Diagram) *chartdbapi.DiagramMetadat
 
 func diagramToPB(diagramModel *model.Diagram) (*chartdbapi.Diagram, error) {
 	content := ""
-	if diagramModel.Content != nil {
-		content = *diagramModel.Content
+	if diagramModel.Content.Value != nil {
+		content = *diagramModel.Content.Value
 	}
 
 	return &chartdbapi.Diagram{

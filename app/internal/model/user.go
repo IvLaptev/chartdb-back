@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
+	"github.com/IvLaptev/chartdb-back/pkg/utils"
 )
 
 const (
@@ -80,13 +82,13 @@ func (t *UserType) UnmarshalJSON(b []byte) error {
 }
 
 type User struct {
-	ID           UserID     `json:"id"`
-	Login        string     `json:"login"`
-	PasswordHash *string    `json:"password_hash"`
-	Type         UserType   `json:"type"`
-	ConfirmedAt  *time.Time `json:"confirmed_at"`
-	CreatedAt    time.Time  `json:"created_at"`
-	UpdatedAt    time.Time  `json:"updated_at"`
+	ID           UserID                `json:"id"`
+	Login        string                `json:"login"`
+	PasswordHash utils.Secret[*string] `json:"password_hash"`
+	Type         UserType              `json:"type"`
+	ConfirmedAt  *time.Time            `json:"confirmed_at"`
+	CreatedAt    time.Time             `json:"created_at"`
+	UpdatedAt    time.Time             `json:"updated_at"`
 }
 
 type UserConfirmationID string

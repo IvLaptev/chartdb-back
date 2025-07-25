@@ -45,7 +45,7 @@ func (h *UserHandler) Create(ctx context.Context, req *chartdbapi.CreateUserRequ
 
 	userModel, err := h.UserService.CreateUser(ctx, &user.CreateUserParams{
 		Login:        req.Login,
-		PasswordHash: passwordHash,
+		PasswordHash: utils.NewSecret(passwordHash),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("create user: %w", err)
@@ -57,7 +57,7 @@ func (h *UserHandler) Create(ctx context.Context, req *chartdbapi.CreateUserRequ
 func (h *UserHandler) Login(ctx context.Context, req *chartdbapi.LoginUserRequest) (*chartdbapi.LoginUserResponse, error) {
 	token, err := h.UserService.LoginUser(ctx, &user.LoginUserParams{
 		Login:        req.Login,
-		PasswordHash: utils.SHA1(req.Password),
+		PasswordHash: utils.NewSecret(utils.SHA1(req.Password)),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("login user: %w", err)

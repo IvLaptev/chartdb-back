@@ -1,6 +1,17 @@
+FROM bufbuild/buf as generator
+
+WORKDIR /gen
+
+COPY ./app .
+RUN buf dep update
+
+RUN buf generate
+
 FROM golang:alpine as builder
 
 WORKDIR /build
+
+COPY --from=generator /gen/api ./api
 
 ADD ./app/go.mod .
 COPY ./app .

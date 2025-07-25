@@ -55,6 +55,15 @@ func (s *ServiceImpl) GetDiagram(ctx context.Context, params *GetDiagramParams) 
 	if err != nil {
 		return nil, fmt.Errorf("row policy from context: %w", err)
 	}
+	subject, err := auth.GetSubject(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get subject: %w", err)
+	}
+
+	adminUserTypes := []model.UserType{model.UserTypeAdmin, model.UserTypeTeacher}
+	if slices.Contains(adminUserTypes, subject.UserType) {
+		rowPolicy = &storage.RowPolicyBackground{}
+	}
 
 	var diagramModel *model.Diagram
 	diagramList, err := s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, []*model.FilterTerm{

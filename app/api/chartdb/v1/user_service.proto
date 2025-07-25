@@ -9,11 +9,11 @@ import "google/api/annotations.proto";
 import "chartdb/v1/user.proto";
 
 service UserService {
-    // rpc Get(GetUserRequest) returns (User) {
-    //     option (google.api.http) = {
-    //         get: "/chartdb/v1/users/{id}"
-    //     };
-    // }
+    rpc Get(GetUserRequest) returns (User) {
+        option (google.api.http) = {
+            get: "/chartdb/v1/users/{id}"
+        };
+    }
 
     rpc Create(CreateUserRequest) returns (User) {
         option (google.api.http) = {

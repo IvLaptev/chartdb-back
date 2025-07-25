@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"slices"
 	"strings"
 	"time"
 
@@ -39,9 +40,12 @@ var (
 
 	ErrInvalidToken = errors.New("invalid token")
 	ErrTokenExpired = errors.New("token expired")
+
+	ErrForbidden = errors.New("forbidden")
 )
 
 type Service interface {
+	GetUser(ctx context.Context, params *GetUserParams) (*model.User, error)
 	CreateUser(ctx context.Context, params *CreateUserParams) (*model.User, error)
 
 	LoginUser(ctx context.Context, params *LoginUserParams) (*model.UserToken, error)
@@ -56,6 +60,36 @@ type ServiceImpl struct {
 	EmailSender          emailsender.EmailSender
 
 	tokenSecret []byte
+}
+
+type GetUserParams struct {
+	ID model.UserID
+}
+
+func (s *ServiceImpl) GetUser(ctx context.Context, params *GetUserParams) (*model.User, error) {
+	ctxlog.Info(ctx, s.Logger, "get user", slog.Any("params", params))
+
+	subject, err := auth.GetSubject(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get subject: %w", err)
+	}
+	adminUserTypes := []model.UserType{model.UserTypeAdmin, model.UserTypeTeacher}
+	if !slices.Contains(adminUserTypes, subject.UserType) {
+		if params.ID != subject.UserID {
+			return nil, xerrors.WrapForbidden(ErrForbidden)
+		}
+	}
+
+	user, err := s.Storage.User().GetUserByID(ctx, params.ID)
+	if err != nil {
+		if errors.Is(err, storage.ErrNotFound) {
+			return nil, xerrors.WrapNotFound(ErrUserNotFound)
+		}
+
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+
+	return user, nil
 }
 
 type CreateUserParams struct {

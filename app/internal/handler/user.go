@@ -23,6 +23,17 @@ type UserHandler struct {
 	chartdbapi.UnimplementedUserServiceServer
 }
 
+func (h *UserHandler) Get(ctx context.Context, req *chartdbapi.GetUserRequest) (*chartdbapi.User, error) {
+	userModel, err := h.UserService.GetUser(ctx, &user.GetUserParams{
+		ID: model.UserID(req.Id),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get user: %w", err)
+	}
+
+	return userToPB(userModel), nil
+}
+
 func (h *UserHandler) Create(ctx context.Context, req *chartdbapi.CreateUserRequest) (*chartdbapi.User, error) {
 	var passwordHash *string
 	if req.Password != "" {

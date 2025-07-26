@@ -31,7 +31,7 @@ var (
 
 type Service interface {
 	GetDiagram(ctx context.Context, params *GetDiagramParams) (*model.Diagram, error)
-	ListDiagrams(ctx context.Context, params *ListDiagramsParams) ([]*model.Diagram, error)
+	ListDiagrams(ctx context.Context, params *ListDiagramsParams) (*model.DiagramList, error)
 
 	CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
 	PatchDiagram(ctx context.Context, params *PatchDiagramParams) (*model.Diagram, error)
@@ -72,28 +72,28 @@ func (s *ServiceImpl) GetDiagram(ctx context.Context, params *GetDiagramParams) 
 			Value:     params.Identifier,
 			Operation: model.FilterOperationExact,
 		},
-	})
+	}, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get all diagrams by id: %w", err)
 	}
 
-	if len(diagramList) == 0 {
+	if len(diagramList.Diagrams) == 0 {
 		diagramList, err = s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, []*model.FilterTerm{
 			{
 				Key:       model.TermKeyCode,
 				Value:     params.Identifier,
 				Operation: model.FilterOperationExact,
 			},
-		})
+		}, nil)
 		if err != nil {
 			return nil, fmt.Errorf("get all diagrams by code: %w", err)
 		}
-		if len(diagramList) == 0 {
+		if len(diagramList.Diagrams) == 0 {
 			return nil, xerrors.WrapNotFound(ErrDiagramNotFound)
 		}
 	}
 
-	diagramModel = diagramList[0]
+	diagramModel = diagramList.Diagrams[0]
 
 	content, err := s.S3Client.GetContent(ctx, diagramModel.ObjectStorageKey)
 	if err != nil {
@@ -112,7 +112,7 @@ type ListDiagramsParams struct {
 	Filter []*model.FilterTerm
 }
 
-func (s *ServiceImpl) ListDiagrams(ctx context.Context, params *ListDiagramsParams) ([]*model.Diagram, error) {
+func (s *ServiceImpl) ListDiagrams(ctx context.Context, params *ListDiagramsParams) (*model.DiagramList, error) {
 	ctxlog.Info(ctx, s.Logger, "list diagrams", slog.Any("params", params))
 
 	rowPolicy, err := storage.RowPolicyFromContext(ctx)
@@ -120,7 +120,7 @@ func (s *ServiceImpl) ListDiagrams(ctx context.Context, params *ListDiagramsPara
 		return nil, fmt.Errorf("row policy from context: %w", err)
 	}
 
-	diagramList, err := s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, params.Filter)
+	diagramList, err := s.Storage.Diagram().GetAllDiagrams(ctx, rowPolicy, params.Filter, nil)
 	if err != nil {
 		return nil, fmt.Errorf("get all diagrams: %w", err)
 	}

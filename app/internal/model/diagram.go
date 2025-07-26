@@ -24,3 +24,8 @@ type Diagram struct {
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 }
+
+type DiagramList struct {
+	Diagrams []*Diagram
+	NextPage *NextPage
+}

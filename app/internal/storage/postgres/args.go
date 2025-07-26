@@ -120,6 +120,8 @@ func resolveTermField(key model.TermKey) (string, error) {
 		return fieldType, nil
 	case model.TermKeyConfirmedAt:
 		return fieldConfirmedAt, nil
+	case model.TermKeyObjectStorageKey:
+		return fieldObjectStorageKey, nil
 	default:
 		return "", fmt.Errorf("unsupported termKey type: %d", key)
 	}

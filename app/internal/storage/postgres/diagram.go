@@ -10,6 +10,7 @@ import (
 	"github.com/IvLaptev/chartdb-back/internal/storage"
 	"github.com/IvLaptev/chartdb-back/pkg/utils"
 	sq "github.com/Masterminds/squirrel"
+	"github.com/aws/smithy-go/ptr"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -64,7 +65,7 @@ func (s *Storage) GetDiagramByID(ctx context.Context, rowPolicy storage.RowPolic
 	return diagramEntityToModel(&diagramEntity), nil
 }
 
-func (s *Storage) GetAllDiagrams(ctx context.Context, rowPolicy storage.RowPolicy, filter []*model.FilterTerm) ([]*model.Diagram, error) {
+func (s *Storage) GetAllDiagrams(ctx context.Context, rowPolicy storage.RowPolicy, filter []*model.FilterTerm, page *model.CurrentPage) (*model.DiagramList, error) {
 	query := sq.Select(diagramFields...).
 		Where(sq.Eq{fieldDeletedAt: nil}).
 		From(diagramTable).
@@ -75,6 +76,11 @@ func (s *Storage) GetAllDiagrams(ctx context.Context, rowPolicy storage.RowPolic
 		return nil, fmt.Errorf("filter query: %w", err)
 	}
 
+	query, err = pageQuery(query, diagramTable, page)
+	if err != nil {
+		return nil, fmt.Errorf("page query: %w", err)
+	}
+
 	sql, args := query.MustSql()
 
 	var diagramEntities []*diagramEntity
@@ -83,7 +89,7 @@ func (s *Storage) GetAllDiagrams(ctx context.Context, rowPolicy storage.RowPolic
 		return nil, formatError(err)
 	}
 
-	return makeDiagramList(diagramEntities), nil
+	return makeDiagramList(diagramEntities, page)
 }
 
 func (s *Storage) CreateDiagram(ctx context.Context, params *storage.CreateDiagramParams) (*model.Diagram, error) {
@@ -178,12 +184,54 @@ func diagramEntityToModel(entity *diagramEntity) *model.Diagram {
 	}
 }
 
-func makeDiagramList(entities []*diagramEntity) []*model.Diagram {
+func makeDiagramList(entities []*diagramEntity, page *model.CurrentPage) (*model.DiagramList, error) {
 	diagrams := make([]*model.Diagram, 0, len(entities))
 	for _, entity := range entities {
 		diagramModel := diagramEntityToModel(entity)
 		diagrams = append(diagrams, diagramModel)
 	}
 
-	return diagrams
+	nextPage, err := digramNextPage(entities, page)
+	if err != nil {
+		return nil, fmt.Errorf("make diagram next page: %w", err)
+	}
+
+	return &model.DiagramList{
+		Diagrams: diagrams,
+		NextPage: nextPage,
+	}, nil
+}
+
+func digramNextPage(entities []*diagramEntity, page *model.CurrentPage) (*model.NextPage, error) {
+	if page == nil {
+		return nil, nil
+	}
+
+	orderBy, err := updateDiagramOrderBy(page.OrderBy, entities)
+	if err != nil {
+		return nil, err
+	}
+
+	return page.NextPage(orderBy, len(entities))
+}
+
+func updateDiagramOrderBy(orderBy model.OrderBy, entities []*diagramEntity) (model.OrderBy, error) {
+	if len(entities) == 0 {
+		return orderBy, nil
+	}
+	lastEntity := entities[len(entities)-1]
+
+	switch ob := orderBy.(type) {
+	case model.OrderByID:
+		ob.LastID = ptr.String(lastEntity.ID.String())
+		return ob, nil
+	case model.OrderByCreatedAt:
+		ob.LastTime = ptr.String(lastEntity.CreatedAt.Format(time.RFC3339))
+		return ob, nil
+	case model.OrderByUpdatedAt:
+		ob.LastTime = ptr.String(lastEntity.UpdatedAt.Format(time.RFC3339))
+		return ob, nil
+	default:
+		return nil, fmt.Errorf("unsupported orderBy type: %T", ob)
+	}
 }

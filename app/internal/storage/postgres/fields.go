@@ -24,3 +24,8 @@ const (
 	returning = "RETURNING "
 	separator = ","
 )
+
+const (
+	asc  = "asc"
+	desc = "desc"
+)

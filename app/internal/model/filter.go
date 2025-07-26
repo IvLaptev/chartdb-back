@@ -11,13 +11,14 @@ type FilterTerm struct {
 const (
 	Unspecified = "UNSPECIFIED"
 
-	TermID           = "id"
-	TermCode         = "code"
-	TermUserID       = "user_id"
-	TermLogin        = "login"
-	TermPasswordHash = "password_hash"
-	TermType         = "type"
-	TermConfirmedAt  = "confirmed_at"
+	TermID               = "id"
+	TermCode             = "code"
+	TermUserID           = "user_id"
+	TermLogin            = "login"
+	TermPasswordHash     = "password_hash"
+	TermType             = "type"
+	TermConfirmedAt      = "confirmed_at"
+	TermObjectStorageKey = "object_storage_key"
 )
 
 type TermKey int64
@@ -31,6 +32,7 @@ const (
 	TermKeyPasswordHash
 	TermKeyType
 	TermKeyConfirmedAt
+	TermKeyObjectStorageKey
 )
 
 func (k TermKey) String() string {
@@ -49,6 +51,8 @@ func (k TermKey) String() string {
 		return TermType
 	case TermKeyConfirmedAt:
 		return TermConfirmedAt
+	case TermKeyObjectStorageKey:
+		return TermObjectStorageKey
 	default:
 		return Unspecified
 	}
@@ -70,6 +74,8 @@ func TermKeyFromString(str string) (TermKey, error) {
 		return TermKeyType, nil
 	case TermConfirmedAt:
 		return TermKeyConfirmedAt, nil
+	case TermObjectStorageKey:
+		return TermKeyObjectStorageKey, nil
 	default:
 		return 0, fmt.Errorf("invalid term key: %s", str)
 	}

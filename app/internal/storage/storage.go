@@ -17,7 +17,7 @@ type Storage interface {
 type DiagramRepository interface {
 	// Supported options: [WithLock]
 	GetDiagramByID(ctx context.Context, rowPolicy RowPolicy, id model.DiagramID, opts ...RequestOption) (*model.Diagram, error)
-	GetAllDiagrams(ctx context.Context, rowPolicy RowPolicy, filter []*model.FilterTerm) ([]*model.Diagram, error)
+	GetAllDiagrams(ctx context.Context, rowPolicy RowPolicy, filter []*model.FilterTerm, page *model.CurrentPage) (*model.DiagramList, error)
 
 	CreateDiagram(ctx context.Context, params *CreateDiagramParams) (*model.Diagram, error)
 	PatchDiagram(ctx context.Context, params *PatchDiagramParams) (*model.Diagram, error)

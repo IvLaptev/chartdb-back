@@ -50,7 +50,7 @@ func (h *DiagramHandler) List(ctx context.Context, req *chartdbapi.ListDiagramsR
 	}
 
 	return &chartdbapi.ListDiagramsResponse{
-		Diagrams: makeDiagramMetadataList(diagrams),
+		Diagrams: makeDiagramMetadataList(diagrams.Diagrams),
 	}, nil
 }
 

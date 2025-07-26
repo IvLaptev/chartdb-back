@@ -8,6 +8,7 @@ import (
 	"time"
 
 	chartdbapi "github.com/IvLaptev/chartdb-back/api/chartdb/v1"
+	"github.com/IvLaptev/chartdb-back/internal/background"
 	"github.com/IvLaptev/chartdb-back/internal/handler"
 	"github.com/IvLaptev/chartdb-back/internal/service/diagram"
 	"github.com/IvLaptev/chartdb-back/internal/service/user"
@@ -62,7 +63,10 @@ func (a *application) Run(ctx context.Context) error {
 		return fmt.Errorf("new chartdb server: %w", err)
 	}
 
+	worker := background.NewWorker(a.logger, objectStorageClient, dbStorage)
+
 	runner.RunGraceContext(httpServer.Run, httpServer.Shutdown)
+	runner.RunContext(worker.Start, worker.Stop)
 
 	return runner.Wait()
 }

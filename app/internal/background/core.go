@@ -77,7 +77,7 @@ func NewWorker(
 				logger:   logger,
 				s3client: s3client,
 				storage:  storage,
-				period:   10 * time.Second,
+				period:   1 * time.Hour,
 			},
 		},
 	}

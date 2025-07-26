@@ -321,6 +321,7 @@ func (s *ServiceImpl) Authenticate(ctx context.Context, token string) (context.C
 		return nil, xerrors.WrapUnauthenticated(ErrInvalidToken)
 	}
 
+	ctxlog.Info(ctx, s.Logger, "authenticated user", slog.String("user_id", userModel.ID.String()), slog.String("user_type", userModel.Type.String()))
 	ctx = auth.SetSubject(ctx, &auth.Subject{
 		UserID:   userModel.ID,
 		UserType: userModel.Type,

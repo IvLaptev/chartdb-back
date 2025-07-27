@@ -14,7 +14,7 @@ jobs:
     - uses: actions/checkout@v4
     - name: Build the Docker image
       run: |
-        echo ${{ secrets.YC_KEY }} > docker login cr.yandex -u json_key --password-stdin
+        echo '${{ secrets.YC_KEY }}' > docker login cr.yandex -u json_key --password-stdin
         docker build . --file ./deploy/Dockerfile --tag chartdb_back:latest
 
     - name: Set version timestamp
@@ -27,7 +27,7 @@ jobs:
 
     - name: Push image
       run: |
-        docker login cr.yandex -u json_key -p "${{ secrets.YC_KEY }}"
+        echo '${{ secrets.YC_KEY }}' > docker login cr.yandex -u json_key --password-stdin
         docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:latest
         docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:${{ env.VERSION }}
         docker logout

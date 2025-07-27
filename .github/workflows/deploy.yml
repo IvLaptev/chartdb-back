@@ -24,10 +24,14 @@ jobs:
         docker tag chartdb_back:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:latest
         docker tag chartdb_back:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:${{ env.VERSION }}
 
+    - name: Login to Yandex Cloud Container Registry
+      id: login-cr
+      uses: yc-actions/yc-cr-login@v3
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_KEY }}
+
     - name: Push image
       run: |
-        echo '${{ secrets.YC_KEY }}' > docker login cr.yandex -u json_key --password-stdin
         docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:latest
         docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:${{ env.VERSION }}
-        docker logout
       

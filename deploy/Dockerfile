@@ -1,6 +1,17 @@
+FROM bufbuild/buf as generator
+
+WORKDIR /gen
+
+COPY ./app .
+RUN buf dep update
+
+RUN buf generate
+
 FROM golang:alpine as builder
 
 WORKDIR /build
+
+COPY --from=generator /gen/api ./api
 
 ADD ./app/go.mod .
 COPY ./app .
@@ -11,7 +22,6 @@ FROM alpine
 
 WORKDIR /app
 
-COPY ./app/pkg/emailsender/templates/* ./templates/
 COPY --from=builder /build/chartdb_back /app/chartdb_back
 
 CMD [ "./chartdb_back", "-c", "config.yaml" ]

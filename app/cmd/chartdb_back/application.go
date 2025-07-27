@@ -125,6 +125,9 @@ func newChartDBServer(
 			"/chartdb/v1/users":         chartDBHandler,
 			"/chartdb/v1/users:confirm": chartDBHandler,
 			"/chartdb/v1/users:login":   chartDBHandler,
+			"/health": http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				w.WriteHeader(http.StatusOK)
+			}),
 		})
 	if err != nil {
 		return nil, fmt.Errorf("new http server: %w", err)

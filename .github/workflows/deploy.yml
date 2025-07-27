@@ -13,4 +13,4 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build ./app --file ./deploy/Dockerfile --tag chartdb_back:$(date +%s)
+      run: docker build . --file ./deploy/Dockerfile --tag chartdb_back:$(date +%s)

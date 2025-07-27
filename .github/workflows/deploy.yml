@@ -13,4 +13,20 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file ./deploy/Dockerfile --tag chartdb_back:$(date +%s)
+      run: docker build . --file ./deploy/Dockerfile --tag chartdb_back:latest
+
+    - name: Set version timestamp
+      run: echo "VERSION=$(date +%s)" >> $GITHUB_ENV
+      
+    - name: Tag image
+      run: |
+        docker tag chartdb_back:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:latest
+        docker tag chartdb_back:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:${{ env.VERSION }}
+
+    - name: Push image
+      run: |
+        docker login cr.yandex -u json_key -p ${{ secrets.YC_KEY }}
+        docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:latest
+        docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_back:${{ env.VERSION }}
+        docker logout
+      

@@ -22,6 +22,8 @@ FROM alpine
 
 WORKDIR /app
 
+RUN apk --no-cache add curl
+
 COPY --from=builder /build/chartdb_back /app/chartdb_back
 COPY ./app/pkg/emailsender/templates/* /emailsender/templates/
 

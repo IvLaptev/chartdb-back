@@ -23,5 +23,6 @@ FROM alpine
 WORKDIR /app
 
 COPY --from=builder /build/chartdb_back /app/chartdb_back
+COPY ./app/pkg/emailsender/templates/* /emailsender/templates/
 
 CMD [ "./chartdb_back", "-c", "config.yaml" ]

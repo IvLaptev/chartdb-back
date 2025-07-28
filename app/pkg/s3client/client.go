@@ -23,8 +23,8 @@ var (
 type S3Config struct {
 	Region          string `yaml:"region"`
 	URL             string `yaml:"url"`
-	AccessKeyID     string `yaml:"access_key_id"`
-	SecretAccessKey string `yaml:"secret_access_key"`
+	AccessKeyID     string `yaml:"access_key_id" env:"AWS_ACCESS_KEY_ID"`
+	SecretAccessKey string `yaml:"secret_access_key" env:"AWS_SECRET_ACCESS_KEY"`
 	Bucket          string `yaml:"bucket"`
 }
 

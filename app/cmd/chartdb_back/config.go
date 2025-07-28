@@ -27,5 +27,5 @@ type LoggerConfig struct {
 }
 
 type AuthConfig struct {
-	TokenSecret string `yaml:"token_secret"`
+	TokenSecret string `yaml:"token_secret" env:"AUTH_TOKEN_SECRET"`
 }

@@ -16,7 +16,7 @@ type EmailSenderConfig struct {
 	Host            string `yaml:"host"`
 	Port            int    `yaml:"port"`
 	Username        string `yaml:"username"`
-	Password        string `yaml:"password"`
+	Password        string `yaml:"password" env:"EMAIL_SENDER_PASSWORD"`
 	TemplatePath    string `yaml:"template_path"`
 	ServiceEndpoint string `yaml:"service_endpoint"`
 }

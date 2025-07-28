@@ -134,7 +134,7 @@ type Config struct {
 	Port        uint64 `yaml:"port"`
 	Database    string `yaml:"database"`
 	User        string `yaml:"user"`
-	Password    string `yaml:"password"`
+	Password    string `yaml:"password" env:"STORAGE_PASSWORD"`
 	SSLMode     string `yaml:"ssl_mode"`
 	SSLRootCert string `yaml:"ssl_root_cert"`
 

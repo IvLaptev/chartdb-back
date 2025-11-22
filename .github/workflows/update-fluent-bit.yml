@@ -37,8 +37,9 @@ jobs:
         docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_fluent-bit:${{ env.VERSION }}
 
   deploy:
+    needs: build
     runs-on: ubuntu-latest
 
     steps:
       - name: Deploy Fluent Bit
-        run: curl -X ${{ secrets.FLUENT_BIT_UPDATE_URL }}
+        run: curl -X POST ${{ secrets.FLUENT_BIT_UPDATE_URL }}

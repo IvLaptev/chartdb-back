@@ -1,0 +1,37 @@
+name: Update Fluent Bit
+
+on:
+  push:
+    paths:
+      - "deploy/fluentbit/**"
+    branches:
+      - "main"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+    - name: Build the Docker image
+      run: |
+        docker build ./deploy/fluentbit --tag chartdb_fluent-bit:latest
+
+    - name: Set version timestamp
+      run: echo "VERSION=$(date +%s)" >> $GITHUB_ENV
+      
+    - name: Tag image
+      run: |
+        docker tag chartdb_fluent-bit:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_fluent-bit:latest
+        docker tag chartdb_fluent-bit:latest cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_fluent-bit:${{ env.VERSION }}
+
+    - name: Login to Yandex Cloud Container Registry
+      id: login-cr
+      uses: yc-actions/yc-cr-login@v3
+      with:
+        yc-sa-json-credentials: ${{ secrets.YC_KEY }}
+
+    - name: Push image
+      run: |
+        docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_fluent-bit:latest
+        docker push cr.yandex/${{ secrets.YC_REGISTRY_ID }}/chartdb_fluent-bit:${{ env.VERSION }}

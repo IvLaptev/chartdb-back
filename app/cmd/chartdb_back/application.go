@@ -54,7 +54,7 @@ func (a *application) Run(ctx context.Context) error {
 	case emailsender.MockEmailSenderType:
 		emailSender = emailsender.NewMockSender()
 	case emailsender.CustomEmailSenderType:
-		emailSender, err = emailsender.NewCustomSender(a.config.EmailSender.CustomEmailSender)
+		emailSender, err = emailsender.NewCustomSender(&a.config.EmailSender.CustomEmailSender)
 	default:
 		return fmt.Errorf("unknown email sender type: %s", a.config.EmailSender.Type)
 	}

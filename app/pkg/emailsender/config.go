@@ -18,6 +18,6 @@ type CustomEmailSenderConfig struct {
 }
 
 type EmailSenderConfig struct {
-	Type              EmailSenderType          `yaml:"type"`
-	CustomEmailSender *CustomEmailSenderConfig `yaml:"custom_email_sender"`
+	Type              EmailSenderType         `yaml:"type"`
+	CustomEmailSender CustomEmailSenderConfig `yaml:"custom_email_sender"`
 }

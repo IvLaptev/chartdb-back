@@ -49,14 +49,22 @@ func (a *application) Run(ctx context.Context) error {
 	}
 	runner.RunExternal(dbStorage.Shutdown)
 
-	emailSender, err := emailsender.NewGomailSender(a.config.EmailSender)
+	var emailSender emailsender.EmailSender
+	switch a.config.EmailSender.Type {
+	case emailsender.MockEmailSenderType:
+		emailSender = emailsender.NewMockSender()
+	case emailsender.CustomEmailSenderType:
+		emailSender, err = emailsender.NewCustomSender(a.config.EmailSender.CustomEmailSender)
+	default:
+		return fmt.Errorf("unknown email sender type: %s", a.config.EmailSender.Type)
+	}
 	if err != nil {
-		return fmt.Errorf("new gomail sender: %w", err)
+		return fmt.Errorf("new sender: %w", err)
 	}
 
 	diagramService := diagram.NewService(a.logger, dbStorage, objectStorageClient)
 
-	userService := user.NewService(a.logger, dbStorage, emailSender, 30*time.Minute, []byte(a.config.Auth.TokenSecret))
+	userService := user.NewService(a.logger, dbStorage, emailSender, 30*time.Minute, 5*time.Minute, []byte(a.config.Auth.TokenSecret))
 
 	httpServer, err := newChartDBServer(ctx, a.logger, a.config.HTTPServer, userService, diagramService)
 	if err != nil {

@@ -49,11 +49,17 @@ func (s *Storage) GetUserByID(ctx context.Context, id model.UserID) (*model.User
 	return userEntityToModel(&user)
 }
 
-func (s *Storage) GetAllUsers(ctx context.Context, filter []*model.FilterTerm) ([]*model.User, error) {
+func (s *Storage) GetAllUsers(ctx context.Context, filter []*model.FilterTerm, options ...storage.RequestOption) ([]*model.User, error) {
+	opts := storage.NewOptions(options)
+
 	query := sq.Select(userColumns...).
 		From(userTable).
 		Where(sq.Eq{fieldDeletedAt: nil}).
 		PlaceholderFormat(sq.Dollar)
+
+	if opts.UseLock {
+		query = useLock(query, userTable)
+	}
 
 	query, err := filterQuery(query, userTable, filter)
 	if err != nil {
@@ -108,6 +114,25 @@ func (s *Storage) PatchUser(ctx context.Context, params *storage.PatchUserParams
 		PlaceholderFormat(sq.Dollar)
 
 	query = patchQueryOptional(query, fieldConfirmedAt, params.ConfirmedAt)
+
+	sql, args := query.MustSql()
+
+	var user userEntity
+	if err := sqlx.GetContext(ctx, s.DB(ctx), &user, sql, args...); err != nil {
+		return nil, formatError(err)
+	}
+
+	return userEntityToModel(&user)
+}
+
+func (s *Storage) DeleteUser(ctx context.Context, userID model.UserID) (*model.User, error) {
+	now := time.Now()
+
+	query := sq.Update(userTable).
+		Set(fieldDeletedAt, now).
+		Where(sq.Eq{fieldDeletedAt: nil, fieldID: userID.String()}).
+		Suffix(returningUser).
+		PlaceholderFormat(sq.Dollar)
 
 	sql, args := query.MustSql()
 

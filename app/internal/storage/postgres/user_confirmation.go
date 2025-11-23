@@ -39,7 +39,27 @@ func (s *Storage) GetUserConfirmationByID(ctx context.Context, id model.UserConf
 		return nil, formatError(err)
 	}
 
-	return userConfirmationEntityToModel(entity), nil
+	return userConfirmationEntityToModel(&entity), nil
+}
+
+func (s *Storage) GetAllUserConfirmation(ctx context.Context, filter []*model.FilterTerm) ([]*model.UserConfirmation, error) {
+	query := sq.Select(userConfirmationFields...).
+		From(userConfirmationTable).
+		PlaceholderFormat(sq.Dollar)
+
+	query, err := filterQuery(query, userConfirmationTable, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	sql, args := query.MustSql()
+
+	var entities []*userConfirmationEntity
+	if err := sqlx.SelectContext(ctx, s.DB(ctx), &entities, sql, args...); err != nil {
+		return nil, formatError(err)
+	}
+
+	return makeUserConfiramationList(entities), nil
 }
 
 func (s *Storage) CreateUserConfirmation(ctx context.Context, params *storage.CreateUserConfirmationParams) (*model.UserConfirmation, error) {
@@ -61,14 +81,22 @@ func (s *Storage) CreateUserConfirmation(ctx context.Context, params *storage.Cr
 		return nil, formatError(err)
 	}
 
-	return userConfirmationEntityToModel(entity), nil
+	return userConfirmationEntityToModel(&entity), nil
 }
 
-func userConfirmationEntityToModel(entity userConfirmationEntity) *model.UserConfirmation {
+func userConfirmationEntityToModel(entity *userConfirmationEntity) *model.UserConfirmation {
 	return &model.UserConfirmation{
 		ID:        entity.ID,
 		UserID:    entity.UserID,
 		CreatedAt: entity.CreatedAt,
 		ExpiresAt: entity.ExpiresAt,
 	}
+}
+
+func makeUserConfiramationList(entities []*userConfirmationEntity) []*model.UserConfirmation {
+	var list []*model.UserConfirmation
+	for _, entity := range entities {
+		list = append(list, userConfirmationEntityToModel(entity))
+	}
+	return list
 }

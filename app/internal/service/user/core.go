@@ -57,6 +57,7 @@ type ServiceImpl struct {
 	Logger               *slog.Logger
 	Storage              storage.Storage
 	UserConfirmationTime time.Duration
+	RegistrationTimeout  time.Duration
 	EmailSender          emailsender.EmailSender
 
 	tokenSecret []byte
@@ -107,49 +108,79 @@ func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) 
 		userType = model.UserTypeStudent
 	}
 
-	userList, err := s.Storage.User().GetAllUsers(ctx, []*model.FilterTerm{
-		{
-			Key:       model.TermKeyLogin,
-			Value:     params.Login,
-			Operation: model.FilterOperationExact,
-		},
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get all users: %w", err)
-	}
-
-	// Don't register guest user on every login
-	if len(userList) == 1 && userType == model.UserTypeGuest {
-		return userList[0], nil
-	}
-	// Registered user can't be registered twice
-	if len(userList) > 0 {
-		return nil, xerrors.WrapInvalidArgument(ErrUserAlreadyExists)
-	}
-
-	var confirmedAt *time.Time
-	switch userType {
-	case model.UserTypeGuest:
-		confirmedAt = ptr.To(time.Now())
-	case model.UserTypeStudent:
-		err := validator.New().StructPartial(params, "Login")
-		if err != nil {
-			return nil, xerrors.WrapInvalidArgument(ErrInvalidLogin)
-		}
-	}
-
-	userID, err := utils.GenerateID(userIDLength)
-	if err != nil {
-		return nil, fmt.Errorf("generate id: %w", err)
-	}
-
-	userConfirmationID, err := utils.GenerateID(userConfirmationIDLength)
-	if err != nil {
-		return nil, fmt.Errorf("generate id: %w", err)
-	}
-
 	var userModel *model.User
-	err = s.Storage.DoInTransaction(ctx, func(ctx context.Context) error {
+	err := s.Storage.DoInTransaction(ctx, func(ctx context.Context) error {
+		userList, err := s.Storage.User().GetAllUsers(ctx, []*model.FilterTerm{
+			{
+				Key:       model.TermKeyLogin,
+				Value:     params.Login,
+				Operation: model.FilterOperationExact,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("get all users: %w", err)
+		}
+
+		if len(userList) > 0 {
+			user := userList[0]
+
+			if user.Type != userType {
+				return xerrors.WrapInvalidArgument(ErrInvalidLogin)
+			}
+
+			// Don't register guest user on every login
+			if user.Type == model.UserTypeGuest {
+				userModel = user
+				return nil
+			}
+
+			if user.ConfirmedAt != nil {
+				return xerrors.WrapInvalidArgument(ErrUserAlreadyExists)
+			}
+
+			userConfirmations, err := s.Storage.UserConfirmation().GetAllUserConfirmation(ctx, []*model.FilterTerm{
+				{
+					Key:       model.TermKeyUserID,
+					Value:     user.ID.String(),
+					Operation: model.FilterOperationExact,
+				},
+			})
+			if err != nil {
+				return fmt.Errorf("get all user confirmations: %w", err)
+			}
+			for _, confirmation := range userConfirmations {
+				if confirmation.CreatedAt.Add(s.RegistrationTimeout).After(time.Now()) {
+					return xerrors.WrapForbidden(ErrForbidden)
+				}
+			}
+
+			_, err = s.Storage.User().DeleteUser(ctx, user.ID)
+			if err != nil {
+				return fmt.Errorf("delete user: %w", err)
+			}
+		}
+
+		var confirmedAt *time.Time
+		switch userType {
+		case model.UserTypeGuest:
+			confirmedAt = ptr.To(time.Now())
+		case model.UserTypeStudent:
+			err := validator.New().StructPartial(params, "Login")
+			if err != nil {
+				return xerrors.WrapInvalidArgument(ErrInvalidLogin)
+			}
+		}
+
+		userID, err := utils.GenerateID(userIDLength)
+		if err != nil {
+			return fmt.Errorf("generate id: %w", err)
+		}
+
+		userConfirmationID, err := utils.GenerateID(userConfirmationIDLength)
+		if err != nil {
+			return fmt.Errorf("generate id: %w", err)
+		}
+
 		userModel, err = s.Storage.User().CreateUser(ctx, &storage.CreateUserParams{
 			ID:           model.UserID(userID),
 			Login:        params.Login,
@@ -335,6 +366,7 @@ func NewService(
 	storage storage.Storage,
 	emailSender emailsender.EmailSender,
 	userConfirmationTime time.Duration,
+	registrationTimeout time.Duration,
 	tokenSecret []byte,
 ) Service {
 	return &ServiceImpl{
@@ -342,6 +374,7 @@ func NewService(
 		Storage:              storage,
 		EmailSender:          emailSender,
 		UserConfirmationTime: userConfirmationTime,
+		RegistrationTimeout:  registrationTimeout,
 		tokenSecret:          tokenSecret,
 	}
 }

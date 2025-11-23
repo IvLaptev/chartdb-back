@@ -144,7 +144,7 @@ func (s *Storage) PatchDiagram(ctx context.Context, params *storage.PatchDiagram
 	var diagramEntity diagramEntity
 	err := sqlx.GetContext(ctx, s.DB(ctx), &diagramEntity, sql, args...)
 	if err != nil {
-		return nil, err
+		return nil, formatError(err)
 	}
 
 	return diagramEntityToModel(&diagramEntity), nil

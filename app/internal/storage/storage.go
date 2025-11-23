@@ -26,14 +26,17 @@ type DiagramRepository interface {
 
 type UserRepository interface {
 	GetUserByID(ctx context.Context, id model.UserID) (*model.User, error)
-	GetAllUsers(ctx context.Context, filter []*model.FilterTerm) ([]*model.User, error)
+	// Supported options: [WithLock]
+	GetAllUsers(ctx context.Context, filter []*model.FilterTerm, options ...RequestOption) ([]*model.User, error)
 
 	CreateUser(ctx context.Context, params *CreateUserParams) (*model.User, error)
 	PatchUser(ctx context.Context, params *PatchUserParams) (*model.User, error)
+	DeleteUser(ctx context.Context, userID model.UserID) (*model.User, error)
 }
 
 type UserConfirmationRepository interface {
 	GetUserConfirmationByID(ctx context.Context, id model.UserConfirmationID) (*model.UserConfirmation, error)
+	GetAllUserConfirmation(ctx context.Context, filter []*model.FilterTerm) ([]*model.UserConfirmation, error)
 
 	CreateUserConfirmation(ctx context.Context, params *CreateUserConfirmationParams) (*model.UserConfirmation, error)
 }

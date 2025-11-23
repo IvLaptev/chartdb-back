@@ -33,3 +33,18 @@ storage:
   max_open_conn: 10
   log_level: debug
   init_timeout: 5s
+
+email_sender:
+  # Suppoted types: ["mock", "custom"]
+  type: mock
+  custom_email_sender:
+    host: "smtp.yandex.ru"
+    port: 465
+    sender_email: "mail@ya.ru"
+    username: "mail@ya.ru"
+    password: "password"
+    template_path: "./pkg/emailsender/templates"
+    service_endpoint: "http://localhost:5173"
+
+auth:
+  token_secret: "secret"

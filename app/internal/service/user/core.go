@@ -176,11 +176,6 @@ func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) 
 			return fmt.Errorf("generate id: %w", err)
 		}
 
-		userConfirmationID, err := utils.GenerateID(userConfirmationIDLength)
-		if err != nil {
-			return fmt.Errorf("generate id: %w", err)
-		}
-
 		userModel, err = s.Storage.User().CreateUser(ctx, &storage.CreateUserParams{
 			ID:           model.UserID(userID),
 			Login:        params.Login,
@@ -192,18 +187,25 @@ func (s *ServiceImpl) CreateUser(ctx context.Context, params *CreateUserParams) 
 			return fmt.Errorf("create user: %w", err)
 		}
 
-		userConfirmationModel, err := s.Storage.UserConfirmation().CreateUserConfirmation(ctx, &storage.CreateUserConfirmationParams{
-			ID:       model.UserConfirmationID(userConfirmationID),
-			UserID:   model.UserID(userID),
-			Duration: s.UserConfirmationTime,
-		})
+		userConfirmationID, err := utils.GenerateID(userConfirmationIDLength)
 		if err != nil {
-			return fmt.Errorf("create user confirmation: %w", err)
+			return fmt.Errorf("generate id: %w", err)
 		}
 
-		err = s.EmailSender.SendCreateUserEmail(userModel.Login, userConfirmationModel.ID.String())
-		if err != nil {
-			return fmt.Errorf("send create user email: %w", err)
+		if userType == model.UserTypeStudent {
+			userConfirmationModel, err := s.Storage.UserConfirmation().CreateUserConfirmation(ctx, &storage.CreateUserConfirmationParams{
+				ID:       model.UserConfirmationID(userConfirmationID),
+				UserID:   model.UserID(userID),
+				Duration: s.UserConfirmationTime,
+			})
+			if err != nil {
+				return fmt.Errorf("create user confirmation: %w", err)
+			}
+
+			err = s.EmailSender.SendCreateUserEmail(userModel.Login, userConfirmationModel.ID.String())
+			if err != nil {
+				return fmt.Errorf("send create user email: %w", err)
+			}
 		}
 
 		return nil
@@ -368,7 +370,7 @@ func NewService(
 	userConfirmationTime time.Duration,
 	registrationTimeout time.Duration,
 	tokenSecret []byte,
-) Service {
+) *ServiceImpl {
 	return &ServiceImpl{
 		Logger:               logger,
 		Storage:              storage,

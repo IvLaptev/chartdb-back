@@ -8,6 +8,7 @@ import (
 
 type Storage interface {
 	DoInTransaction(ctx context.Context, f func(ctx context.Context) error) error
+	Erase(ctx context.Context)
 
 	Diagram() DiagramRepository
 	User() UserRepository

@@ -5,11 +5,46 @@ on:
     branches: [ "main" ]
 
 jobs:
+  test:
+    services:
+      postgres:
+        image: postgres
+        env:
+          POSTGRES_PASSWORD: chartdb
+          POSTGRES_USER: secretpass
+          POSTGRES_DB: chartdb-test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+        
+    steps:
+    - uses: actions/checkout@v4
+
+    - uses: actions/setup-go@v5
+      with:
+        go-version: '1.24.x'
+
+    - name: Setup dependencies
+      run: |
+        cd app
+        go mod download
+
+    - name: Run tests
+      run: |
+        cd app
+        go test -v ./...
+
+
   build:
     runs-on: ubuntu-latest
 
     steps:
     - uses: actions/checkout@v4
+
     - name: Build the Docker image
       run: |
         docker build . --file ./deploy/Dockerfile --tag chartdb_back:latest

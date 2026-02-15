@@ -29,7 +29,7 @@ jobs:
       run: |
         pip install yandex-pgmigrate
         cd app
-        python -m yandex-pgmigrate migrate -c 'host=localhost port=5432 dbname=chartdb user=chartdb password=secretpass' -d . -t latest -v -a afterAll:./migrations/grants
+        python3 -m yandex-pgmigrate migrate -c 'host=localhost port=5432 dbname=chartdb user=chartdb password=secretpass' -d . -t latest -v -a afterAll:./migrations/grants
     
 
     - uses: actions/setup-go@v5

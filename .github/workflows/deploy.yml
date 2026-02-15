@@ -11,8 +11,8 @@ jobs:
       postgres:
         image: postgres
         env:
-          POSTGRES_PASSWORD: chartdb
-          POSTGRES_USER: secretpass
+          POSTGRES_PASSWORD: secretpass
+          POSTGRES_USER: chartdb
           POSTGRES_DB: chartdb-test
         options: >-
           --health-cmd pg_isready

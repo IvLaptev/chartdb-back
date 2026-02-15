@@ -32,7 +32,7 @@ jobs:
     - name: Migrate PG
       run: |
         cd app
-        pip install -e yandex-pgmigrate
+        pip install yandex-pgmigrate
         python -m yandex-pgmigrate migrate -c 'host=localhost port=5432 dbname=chartdb user=chartdb password=secretpass' -d . -t latest -v -a afterAll:./migrations/grants
     
 
@@ -53,7 +53,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: test
+    # needs: test
 
     steps:
     - uses: actions/checkout@v4

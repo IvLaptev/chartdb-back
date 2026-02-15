@@ -25,6 +25,13 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
+    - name: Migrate PG
+      run: |
+        pip install yandex-pgmigrate
+        cd app
+        yandex-pgmigrate migrate -c 'host=localhost port=5432 dbname=chartdb user=chartdb password=secretpass' -d . -t latest -v -a afterAll:./migrations/grants
+    
+
     - uses: actions/setup-go@v5
       with:
         go-version: '1.24.x'

@@ -2,11 +2,13 @@ package user
 
 import (
 	"context"
+	"encoding/base64"
 	"log/slog"
 	"os"
 	"testing"
 	"time"
 
+	"github.com/IvLaptev/chartdb-back/internal/auth"
 	"github.com/IvLaptev/chartdb-back/internal/model"
 	"github.com/IvLaptev/chartdb-back/internal/storage"
 	"github.com/IvLaptev/chartdb-back/internal/storage/postgres"
@@ -45,7 +47,7 @@ func (s *UserServiceSuite) SetupTest() {
 	s.UserService = NewService(s.logger, s.storage, s.emailsender, 30*time.Minute, 1*time.Hour, []byte("secret"))
 }
 
-func (s *UserServiceSuite) TestCreateNewGuestUser() {
+func (s *UserServiceSuite) TestCreateUser_GuestOk() {
 	ctx := context.Background()
 
 	userLogin := "00И0000"
@@ -62,7 +64,7 @@ func (s *UserServiceSuite) TestCreateNewGuestUser() {
 	s.Require().Nil(userModel.PasswordHash.Value)
 }
 
-func (s *UserServiceSuite) TestCreateNewStudentUser_WrongEmail() {
+func (s *UserServiceSuite) TestCreateUser_StudentWrongEmail() {
 	ctx := context.Background()
 
 	userLogin := "00И0000"
@@ -73,7 +75,7 @@ func (s *UserServiceSuite) TestCreateNewStudentUser_WrongEmail() {
 	s.Require().Error(err)
 }
 
-func (s *UserServiceSuite) TestCreateNewStudentUser_Ok() {
+func (s *UserServiceSuite) TestCreateUser_StudentOk() {
 	ctx := context.Background()
 	userLogin := "test@edu.mirea.ru"
 
@@ -88,5 +90,19 @@ func (s *UserServiceSuite) TestCreateNewStudentUser_Ok() {
 	s.Require().NotNil(userModel.PasswordHash.Value)
 	s.Require().Equal(userLogin, userModel.Login)
 	s.Require().Nil(userModel.ConfirmedAt)
+}
 
+func (s *UserServiceSuite) TestAuthenticate_GuestOk() {
+	ctx := context.Background()
+
+	s.TestCreateUser_GuestOk()
+
+	userLogin := "00И0000"
+	token := base64.StdEncoding.EncodeToString([]byte(userLogin))
+	ctx, err := s.UserService.Authenticate(ctx, token)
+	s.Require().NoError(err)
+
+	sgj, err := auth.GetSubject(ctx)
+	s.Require().NoError(err)
+	s.Require().NotEqual(userLogin, sgj.UserID)
 }

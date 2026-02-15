@@ -303,15 +303,15 @@ func (s *ServiceImpl) Authenticate(ctx context.Context, token string) (context.C
 	tokenParts := strings.Split(token, " ")
 	switch len(tokenParts) {
 	case 1:
-		userID, err := base64.StdEncoding.DecodeString(tokenParts[0])
+		userLogin, err := base64.StdEncoding.DecodeString(tokenParts[0])
 		if err != nil {
 			return nil, xerrors.WrapUnauthenticated(ErrInvalidUserID)
 		}
 
 		userList, err := s.Storage.User().GetAllUsers(ctx, []*model.FilterTerm{
 			{
-				Key:       model.TermKeyID,
-				Value:     string(userID),
+				Key:       model.TermKeyLogin,
+				Value:     string(userLogin),
 				Operation: model.FilterOperationExact,
 			},
 			{

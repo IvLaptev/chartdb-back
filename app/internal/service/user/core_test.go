@@ -62,6 +62,10 @@ func (s *UserServiceSuite) TestCreateUser_GuestOk() {
 	s.Require().Equal("00И0000", userModel.Login)
 	s.Require().Equal(model.UserTypeGuest, userModel.Type)
 	s.Require().Nil(userModel.PasswordHash.Value)
+
+	confirmationList, err := s.storage.UserConfirmation().GetAllUserConfirmation(ctx, nil)
+	s.Require().NoError(err)
+	s.Require().Empty(confirmationList)
 }
 
 func (s *UserServiceSuite) TestCreateUser_StudentWrongEmail() {
@@ -90,6 +94,10 @@ func (s *UserServiceSuite) TestCreateUser_StudentOk() {
 	s.Require().NotNil(userModel.PasswordHash.Value)
 	s.Require().Equal(userLogin, userModel.Login)
 	s.Require().Nil(userModel.ConfirmedAt)
+
+	confirmationList, err := s.storage.UserConfirmation().GetAllUserConfirmation(ctx, nil)
+	s.Require().NoError(err)
+	s.Require().Equal(1, len(confirmationList))
 }
 
 func (s *UserServiceSuite) TestAuthenticate_GuestOk() {
@@ -102,7 +110,7 @@ func (s *UserServiceSuite) TestAuthenticate_GuestOk() {
 	ctx, err := s.UserService.Authenticate(ctx, token)
 	s.Require().NoError(err)
 
-	sgj, err := auth.GetSubject(ctx)
+	subject, err := auth.GetSubject(ctx)
 	s.Require().NoError(err)
-	s.Require().NotEqual(userLogin, sgj.UserID)
+	s.Require().NotEqual(userLogin, subject.UserID)
 }

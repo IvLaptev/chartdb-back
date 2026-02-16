@@ -31,10 +31,16 @@ jobs:
 
     - name: Migrate PG
       run: |
-        cd app
-        pip install yandex-pgmigrate
-        python -m yandex-pgmigrate migrate -c 'host=localhost port=5432 dbname=chartdb user=chartdb password=secretpass' -d . -t latest -v -a afterAll:./migrations/grants
-    
+        apt update
+        apt install postgresql-client
+        for file in ./app/migrations/*.sql; do
+          echo "Executing script: $file"
+          PGPASSWORD=secretpass psql -h localhost -p 5432 -U chartdb -d chartdb-test -f "$file"
+          if [ $? -ne 0 ]; then
+            echo "Error executing $file. Aborting."
+            exit 1
+          fi
+        done
 
     - uses: actions/setup-go@v5
       with:

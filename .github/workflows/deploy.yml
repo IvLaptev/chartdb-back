@@ -31,8 +31,8 @@ jobs:
 
     - name: Migrate PG
       run: |
-        apt update
-        apt install postgresql-client
+        sudo apt update
+        sudo apt install postgresql-client
         for file in ./app/migrations/*.sql; do
           echo "Executing script: $file"
           PGPASSWORD=secretpass psql -h localhost -p 5432 -U chartdb -d chartdb-test -f "$file"
